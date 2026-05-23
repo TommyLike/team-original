@@ -1,14 +1,32 @@
 # Team Original
 
-Multi-agent team pipeline scaffolds for bootstrapping AI-assisted workflows. One script, three pipelines — each generates a full directory of agent instructions, artifact templates, and orchestration guides tailored to a different goal.
+Multi-agent team pipeline scaffolds for bootstrapping AI-assisted
+workflows. One script, three pipelines — each generates a full directory
+of agent instructions, artifact templates, and orchestration guides
+tailored to a different goal.
 
 ## Pipelines
 
 | Command | Purpose |
-|---|---|
-| `./init-pipeline.sh research` | Research-to-PPT pipeline — multi-lens research → analysis → narrative → PPT build |
-| `./init-pipeline.sh software` | Software development pipeline — requirements → architecture → coding → testing |
-| `./init-pipeline.sh study` | Learning guide builder — topic decomposition → resource curation → 7-day study plan |
+| ------- | ------- |
+| `./init-pipeline.sh research` | Research-to-PPT pipeline |
+| `./init-pipeline.sh software` | Software development pipeline |
+| `./init-pipeline.sh study` | Learning guide builder |
+
+### research
+
+Multi-lens research → question mapping → parallel research →
+analysis → devil's advocate → narrative → PPT build.
+
+### software
+
+Requirements → QA review → architecture (optional) → QA review →
+coding → test case development → testing → report.
+
+### study
+
+Topic decomposition → multi-lens resource curation → 7-day study plan
+draft → bias review → final polished output package.
 
 ## Quick Start
 
@@ -29,30 +47,33 @@ Multi-agent team pipeline scaffolds for bootstrapping AI-assisted workflows. One
 
 ## Repository Structure
 
-```
+```text
 .
 ├── init-pipeline.sh          # Main scaffold script
 ├── .github/workflows/ci.yml  # CI: shellcheck + markdownlint
-└── README.md
+├── CLAUDE.md                 # AI assistant guide
+├── README.md
+└── LICENSE
 ```
 
 After running `init-pipeline.sh`, the generated project will contain:
 
-```
+```text
 .
-├── CLAUDE.md                 # Orchestration guide for the pipeline
-├── CLAUDE-RESUME.md          # Resume point if pipeline is interrupted
-├── COWORK.md                 # Cowork-specific build guide (research pipeline)
+├── CLAUDE.md                 # Orchestration guide
+├── CLAUDE-RESUME.md          # Resume point if interrupted
+├── COWORK.md                 # Cowork build guide (research)
 ├── input.md                  # Your project brief
-├── agents/                   # Agent instruction files (one per subagent)
+├── agents/                   # Agent instruction files
 ├── artifacts/                # Intermediate and final outputs
-├── output/                   # Final deliverables (study pipeline)
-└── diagrams/                 # Diagram specs and outputs (research pipeline)
+├── output/                   # Final deliverables (study)
+└── diagrams/                 # Diagram specs and outputs (research)
 ```
 
 ## Contributing
 
-This repo requires all changes to go through pull requests. Direct pushes to `main` are not allowed.
+All changes must go through pull requests.
+Direct pushes to `main` are not allowed.
 
 1. Create a feature branch
 2. Make your changes
@@ -61,4 +82,4 @@ This repo requires all changes to go through pull requests. Direct pushes to `ma
 
 ## License
 
-Internal use.
+MIT — see [LICENSE](LICENSE).
