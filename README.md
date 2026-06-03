@@ -15,7 +15,7 @@ tailored to a different goal.
 
 ### research
 
-```
+```text
 Step -2: Value Assessment  →  "Should we research this?"
           ROI · alternatives · expert gaps · GO/NO-GO decision
           (skippable if topic is pre-approved)
