@@ -15,8 +15,38 @@ tailored to a different goal.
 
 ### research
 
-Multi-lens research → question mapping → parallel research →
-analysis → devil's advocate → narrative → PPT build.
+```
+Step -2: Value Assessment  →  "Should we research this?"
+          ROI · alternatives · expert gaps · GO/NO-GO decision
+          (skippable if topic is pre-approved)
+           ↓
+Step -1: Brainstorming      →  "What exactly should we research?"
+          Problem reframes · assumptions · analogies · directions
+          (skippable if topic is well-defined)
+           ↓
+Step 0:  Question Architect →  Research framework design
+           ↓
+Step 1:  3× Parallel Researchers   (technical · strategic · contrarian)
+           ↓
+Step 2:  Synthesis + Knowledge Gap Map
+           ↓
+Step 3:  Analyst (first pass)
+           ↓
+Step 4:  Devil's Advocate
+           ↓
+Step 5:  Analyst (revision)
+           ↓
+Step 6:  Narrative Architect + Diagram Specs
+           ↓
+Step 7:  PPT Build (Cowork)
+```
+
+**What's new**: The pipeline now starts with two upstream steps that answer
+"whether" and "what" before investing in "how". Step -2 (Value Assessor)
+evaluates if the research is worth doing at all — forcing explicit
+consideration of ROI, alternatives, and expert input gaps. Step -1
+(Brainstorming) explores open-ended problems from multiple perspectives
+before decomposing them into researchable questions.
 
 ### software
 
