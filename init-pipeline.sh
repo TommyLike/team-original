@@ -16,6 +16,8 @@ case "$1" in
     research)
         echo "Setting up Cowork research pipeline in current directory..."
 
+        mkdir -p agents/value-assessor
+        mkdir -p agents/brainstorming
         mkdir -p agents/question-architect
         mkdir -p agents/researcher-technical agents/researcher-strategic agents/researcher-contrarian
         mkdir -p agents/analyst agents/devils-advocate agents/narrative-architect
@@ -24,13 +26,29 @@ case "$1" in
 
         cat > input.md << 'INPUTEOF'
 # Research topic
-[Describe your research topic here before running the orchestrator]
+[Describe your research topic here. Can be:
+  - A well-defined topic: "Evaluate the feasibility of OurBMC community governance model"
+  - An open-ended question: "How should we invest in AI agent capabilities for H2?"
+  If open-ended, the Value Assessor (Step -2) will help you think through whether it's worth pursuing.]
 
-# Background and purpose
-[Why this research matters, what problem it solves]
+# Why this matters
+[What problem does this solve? Who benefits? What happens if we don't do this?
+  This is the MOST important section for the Value Assessment phase.]
+
+# What's the expected impact
+[If this research leads to action, what changes? Quantify if possible:
+  time saved, revenue impact, risk reduced, competitive advantage, etc.]
+
+# Alternatives considered
+[What else could we do with the same time/resources? Including "do nothing".
+  Have similar efforts been tried before? What happened?]
 
 # Reference information
 [URLs, local repos, documents to consult]
+
+# Expert knowledge needed
+[What domain expertise is required? Who should we talk to?
+  Are there specific people whose input would change the assessment?]
 
 # Style (optional)
 style: [exact skill name or keyword, e.g. "huawei", or leave blank for defaults]
@@ -40,6 +58,8 @@ style: [exact skill name or keyword, e.g. "huawei", or leave blank for defaults]
 INPUTEOF
 
         echo "# Pipeline log" > artifacts/00-pipeline-log.md
+        : > artifacts/00-value-assessment.md
+        : > artifacts/00-brainstorm-output.md
         : > artifacts/00-question-map.md
         : > artifacts/01a-research-technical.md
         : > artifacts/01b-research-strategic.md
@@ -50,7 +70,7 @@ INPUTEOF
         : > artifacts/02-analysis-final.md
         : > artifacts/03-narrative.md
         : > artifacts/03-diagram-specs.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Question Architect (Claude Code phase)\n\n## Phases\n- **Claude Code** (Steps 0-6): question design, research, analysis, narrative — run with: Read CLAUDE.md and start the pipeline\n- **Cowork** (Step 7): PPT build — run with: Read COWORK.md and build the deck\n' > CLAUDE-RESUME.md
+        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step -2 — Value Assessment (Claude Code phase)\n\n## Phases\n- **Claude Code** (Steps -2–6): value assessment, brainstorming, question design, research, analysis, narrative — run with: Read CLAUDE.md and start the pipeline\n- **Cowork** (Step 7): PPT build — run with: Read COWORK.md and build the deck\n' > CLAUDE-RESUME.md
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -58,7 +78,7 @@ import os
 files = {}
 files['CLAUDE.md'] = """# Research Pipeline — Claude Code Orchestration Guide
 
-**You are Claude Code.** This file is your orchestration guide for running the research phase (Steps 0–6) of the research-to-PPT pipeline.
+**You are Claude Code.** This file is your orchestration guide for running the research phase (Steps -2–6) of the research-to-PPT pipeline.
 When the user asks you to run the pipeline (or resume it), follow these steps in order.
 
 **Before starting any step**, confirm model assignments with the user (see "Model confirmation" below).
@@ -68,6 +88,16 @@ When the user asks you to run the pipeline (or resume it), follow these steps in
 ## Pipeline overview
 
 ```
+Step -2: Value Assessor (Agent subagent, Opus) → artifacts/00-value-assessment.md
+  → STOP: show value/ROI analysis, alternatives, go/no-go recommendation.
+    User decides whether this research is worth pursuing BEFORE any work begins.
+    (For well-defined, pre-approved topics, can skip with user consent.)
+        ↓
+Step -1: Brainstorming Agent (Agent subagent, Opus) → artifacts/00-brainstorm-output.md
+  → STOP: show problem reframes, research directions, hidden assumptions.
+    User confirms direction before research begins.
+    (Skip if user says the topic is already well-defined.)
+        ↓
 Step 0: Question Architect (Agent subagent, Opus) → artifacts/00-question-map.md
   → STOP: show question map + blind-spot checklist, wait for user confirmation/additions
         ↓
@@ -123,10 +153,12 @@ Step 6: Narrative Architect (Agent subagent, Sonnet)
 
 ## Model confirmation
 
-**Do this before Step 0.** Show the user the default model for each agent and ask whether they want to change any:
+**Do this before Step -2.** Show the user the default model for each agent and ask whether they want to change any:
 
 | Step | Agent | Default model |
 |---|---|---|
+| -2 | Value Assessor | opus |
+| -1 | Brainstorming Agent | opus |
 | 0 | Question Architect | opus |
 | 1a–1c | Researchers (×3, parallel) | sonnet |
 | 3 | Analyst — first pass | opus |
@@ -138,6 +170,8 @@ Ask: *"These are the default models. Reply \'confirm\' to use them, or tell me a
 
 Wait for the user\'s reply before proceeding. Record the confirmed models in `artifacts/00-pipeline-log.md`:
 ```
+model-value-assessor: <confirmed>
+model-brainstorming: <confirmed>
 model-question-architect: <confirmed>
 model-researcher: <confirmed>
 model-analyst: <confirmed>
@@ -153,7 +187,9 @@ Use the confirmed models when launching every agent below.
 
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| 0 | question-architect | opus | input.md | artifacts/00-question-map.md |
+| -2 | value-assessor | opus | input.md | artifacts/00-value-assessment.md |
+| -1 | brainstorming | opus | input.md + 00-value-assessment.md | artifacts/00-brainstorm-output.md |
+| 0 | question-architect | opus | input.md + 00-brainstorm-output.md | artifacts/00-question-map.md |
 | 1a | researcher-technical | sonnet | input.md + 00-question-map.md | artifacts/01a-research-technical.md |
 | 1b | researcher-strategic | sonnet | input.md + 00-question-map.md | artifacts/01b-research-strategic.md |
 | 1c | researcher-contrarian | sonnet | input.md + 00-question-map.md | artifacts/01c-research-contrarian.md |
@@ -190,10 +226,95 @@ All other steps are sequential: verify the previous artifact exists and is non-e
 
 ## Detailed steps
 
+### Step -2 — Value Assessment (Is This Worth Doing?)
+
+Agent: `value-assessor`, model: opus.
+Input: `input.md`.
+Output: `artifacts/00-value-assessment.md`.
+
+**Why this step exists**: The pipeline is designed to answer "how" questions — how to research, how to analyze, how to build. But before investing research effort, you need to answer "whether" and "why". This step prevents wasted effort on low-value research directions.
+
+**Before launching this agent**, read `input.md` and decide whether to offer a skip:
+
+If the research topic is **already approved / pre-validated** (e.g. part of an existing roadmap item with clear budget), say:
+> "Your topic appears to already have organizational backing. The Value Assessment phase (Step -2) can still help clarify expected impact and surface expert gaps, but takes ~60-90s. Would you like to run it, or skip to Step -1 (Brainstorming)?"
+
+If the topic is **new / exploratory / uncertain**, say:
+> "Before we invest in research, let me run the Value Assessor first to evaluate whether this is worth pursuing — what's the expected impact, what are the alternatives, and whether we have the right expert input to proceed."
+
+Then launch the agent:
+```
+Read agents/value-assessor/CLAUDE.md for your full instructions.
+Project root: <absolute path to this project>
+```
+
+The agent will assess value through five dimensions: (1) problem validation, (2) impact hypothesis, (3) alternatives analysis, (4) expert calibration, and (5) rough effort sizing. It writes `artifacts/00-value-assessment.md` and prints a STOP block.
+
+**→ STOP**: After it completes, show the user:
+1. Value score and go/no-go recommendation
+2. Key uncertainties (things that could flip the assessment)
+3. Expert knowledge gaps (who needs to weigh in)
+4. Alternatives that should be considered
+
+Ask:
+- "Does this assessment match your intuition about the value of this research?"
+- "Are there experts we should consult before proceeding?"
+- "Should we proceed, pivot to an alternative, or reconsider?"
+
+If the user provides expert input or corrections, update `artifacts/00-value-assessment.md` accordingly. If the user says "go/proceed", move to Step -1.
+
+**Skip path**: If the user chose to skip, create a minimal `artifacts/00-value-assessment.md`:
+```
+# Value Assessment skipped
+User confirmed the research topic is pre-approved and opted to skip value assessment.
+```
+
+### Step -1 — Brainstorming (Problem Framing)
+
+Agent: `brainstorming`, model: opus.
+Input: `input.md` + `artifacts/00-value-assessment.md`.
+Output: `artifacts/00-brainstorm-output.md`.
+
+**Before launching this agent**, read `input.md` and decide whether to offer a skip:
+
+If the research topic is **already well-defined** (specific, narrow, with clear scope — e.g. "Research the governance model of OurBMC"), say:
+> "Your topic looks well-defined. The brainstorming phase (Step -1) is designed for open-ended problems and can still help validate your framing or surface blind spots. Would you like to run it, or skip to Step 0?"
+
+If the topic is **open-ended or fuzzy**, say:
+> "Your topic is open-ended. I\'ll run the Brainstorming agent first to explore the problem space and generate concrete research directions."
+
+Then launch the agent:
+```
+Read agents/brainstorming/CLAUDE.md for your full instructions.
+Project root: <absolute path to this project>
+```
+
+The agent will self-deliberate using a structured brainstorming methodology (problem diagnosis, multi-perspective reframing, assumption challenge, cross-domain analogy, research direction generation). It writes `artifacts/00-brainstorm-output.md` and prints a STOP block.
+
+**→ STOP**: After it completes, show the user:
+1. Problem diagnosis and core tension
+2. Top research directions (prioritized)
+3. Hidden assumptions surfaced
+4. Cross-domain analogies found
+
+Ask:
+- "Do these research directions capture what you want to explore?"
+- "Are there angles or ideas you want to add or remove?"
+- "Should any direction be elevated/deprioritized?"
+
+If the user provides additions or corrections, update `artifacts/00-brainstorm-output.md` accordingly. If the user says "go", proceed to Step 0.
+
+**Skip path**: If the user chose to skip brainstorming, create a minimal `artifacts/00-brainstorm-output.md`:
+```
+# Brainstorming skipped
+User confirmed the research topic is well-defined and opted to skip brainstorming.
+```
+Then proceed directly to Step 0.
+
 ### Step 0 — Question Architect
 
 Agent: `question-architect`, model: opus.
-Input: `input.md`.
+Input: `input.md` + `artifacts/00-brainstorm-output.md`.
 Output: `artifacts/00-question-map.md`.
 
 The agent will print a formatted STOP block directly in its output. After it completes, show that block to the user.
@@ -367,20 +488,266 @@ Maintain `artifacts/00-pipeline-log.md` throughout. Record:
 ## Rules
 
 1. Always announce which step you are starting and what it will produce.
-2. Never start Step 1 until the user confirms the question map (Step 0 stop).
-3. Never start Step 3 until the user confirms the synthesis (Step 2 stop).
-4. Never proceed past Step 6 — PPT creation is Cowork\'s responsibility (see COWORK.md).
-5. Verify each artifact exists and is non-empty before starting the next step.
-6. Never modify existing artifacts from completed steps without telling the user first.
-7. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
+2. Never start Step -2 until the user confirms the model assignments.
+3. Never start Step -1 until Step -2 is complete and confirmed (or skipped).
+4. Never start Step 0 until Step -1 is complete and confirmed (or skipped).
+5. Never start Step 1 until the user confirms the question map (Step 0 stop).
+6. Never start Step 3 until the user confirms the synthesis (Step 2 stop).
+7. Never proceed past Step 6 — PPT creation is Cowork\'s responsibility (see COWORK.md).
+8. Verify each artifact exists and is non-empty before starting the next step.
+9. Never modify existing artifacts from completed steps without telling the user first.
+10. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
    and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
 """
+files['agents/value-assessor/CLAUDE.md'] = """# Value Assessor
+
+You are a strategic value assessment expert. Your job is to evaluate whether a research topic is worth pursuing BEFORE any research effort is invested — answering "should we do this?" not "how should we do this?"
+
+This step exists because research pipelines are biased toward execution. They assume the topic is worth researching. But many research efforts fail not because the research was bad, but because the question wasn't worth answering in the first place.
+
+## Input
+Read `input.md` for the topic, background, expected impact, alternatives, and expert knowledge needs.
+
+## Your methodology
+
+Work through these five dimensions, writing your reasoning into the output:
+
+### Dimension 1 — Problem Validation
+
+Is this a real problem? Answer:
+- **Who has this problem?** Be specific. Name roles, teams, or organizations.
+- **How painful is it?** What's the cost of NOT solving it? Quantify if possible (hours lost, money wasted, risk incurred).
+- **Is it urgent?** Why now? What changed that makes this timely?
+- **How do you know?** What evidence exists that this is a real problem (not just a perceived one)?
+
+Rate: Real & urgent / Real but not urgent / Perceived (may not be real) / Unknown
+
+### Dimension 2 — Impact Hypothesis
+
+If this research leads to action, what changes?
+- **Primary beneficiary**: Who benefits most directly?
+- **Expected magnitude**: Small (incremental improvement) / Medium (meaningful change) / Large (transformative)
+- **How would you measure success?** What metric moves? By how much?
+- **Timeframe**: When would impact be visible? (weeks / months / years)
+- **Confidence**: How certain are you about this impact? (high / medium / low — be honest)
+
+### Dimension 3 — Alternatives Analysis
+
+What else could we do with the same resources? This is the MOST important dimension. List at least 3 alternatives, including:
+
+1. **Do nothing / defer**: What happens if we don't research this now? Is the window closing?
+2. **Buy / adopt**: Is there an existing solution we could use instead of building?
+3. **Different approach**: Is there a fundamentally different way to solve the same problem?
+4. **Different priority**: What other research topics would we NOT do if we do this one?
+
+For each: one-line description, rough effort comparison, and expected outcome difference.
+
+### Dimension 4 — Expert Calibration
+
+What domain expertise would change this assessment?
+- **Known unknowns**: What do we NOT know that an expert would?
+- **Past attempts**: Has this (or something similar) been tried before? Inside the organization? In the industry? What happened?
+- **Key stakeholders**: Who would need to buy in for this to succeed? Have they been consulted?
+- **Expert recommendations**: Based on the topic, what types of experts should weigh in? (e.g., legal for compliance topics, architects for platform topics, maintainers for community topics)
+
+Flag specific items as `[Expert input needed — <who>]`.
+
+### Dimension 5 — Rough Effort Sizing
+
+Not detailed estimation, but order-of-magnitude:
+- **Research complexity**: Simple (days) / Medium (weeks) / Complex (months)
+- **Dependencies**: What must be true before this can succeed?
+- **Key risks**: What could kill this project? (technical, organizational, market)
+
+### Go/No-Go Recommendation
+
+Based on the five dimensions above, make a clear recommendation:
+
+- **GO**: High value, clear problem, reasonable alternatives ruled out. Proceed to brainstorming.
+- **CONDITIONAL GO**: Value is clear but there are significant unknowns. Proceed ONLY after expert input on specific items.
+- **PIVOT**: The problem is real but the proposed approach is wrong. Consider these alternatives instead.
+- **NO-GO**: Low value, better alternatives exist, or the problem isn't real. Recommend not proceeding.
+
+If CONDITIONAL GO, list the specific expert inputs needed and who should provide them.
+
+## Output
+
+Write `artifacts/00-value-assessment.md` with this structure:
+
+```
+# Value Assessment: [Topic]
+
+## 1. Problem Validation
+[Diagnosis + evidence + rating]
+
+## 2. Impact Hypothesis
+[Who benefits, how much, when, confidence level]
+
+## 3. Alternatives Analysis
+[Table: Alternative | Effort | Expected Outcome | Recommendation]
+
+## 4. Expert Calibration
+[Known unknowns, past attempts, stakeholders, expert recommendations]
+[Flagged items: [Expert input needed — <who>]]
+
+## 5. Rough Effort Sizing
+[Complexity, dependencies, key risks]
+
+## 6. Recommendation
+**[GO / CONDITIONAL GO / PIVOT / NO-GO]**
+[One-paragraph justification]
+
+## 7. If Proceeding: Expert Input Checklist
+[Who to talk to, what to ask, before proceeding to brainstorming]
+```
+
+## STOP message
+
+After writing the artifact, print this block:
+
+```
+─────────────────────────────────────────
+STOP — Value Assessment complete
+─────────────────────────────────────────
+
+Assessment: artifacts/00-value-assessment.md
+
+Recommendation: [GO / CONDITIONAL GO / PIVOT / NO-GO]
+
+Value score by dimension:
+  Problem validation: [Real & urgent / Real not urgent / Perceived / Unknown]
+  Impact hypothesis: [Small / Medium / Large] · Confidence: [High / Medium / Low]
+  Alternatives: [N] identified · Best alternative: [name]
+  Expert gaps: [N] items need expert input before proceeding
+
+Key uncertainties:
+  1. [most critical unknown]
+  2. [second most critical]
+
+If CONDITIONAL GO: Expert input needed from:
+  - [role/person]: [what to ask]
+
+Do you agree with this assessment?
+- Reply "proceed" to move to Step -1 (Brainstorming).
+- Reply "skip" to skip both value assessment AND brainstorming → go directly to Step 0 (Question Architect).
+- Or provide expert input to refine the assessment.
+─────────────────────────────────────────
+```
+
+## Rules
+- Do NOT launch any research agents. Your output is the value assessment and STOP message only.
+- Do not modify `input.md`.
+- Be honest about uncertainty — overconfidence here leads to wasted effort downstream.
+- The "do nothing" alternative must always be explicitly evaluated.
+- If the problem validation is "Perceived" or "Unknown", the default recommendation should be CONDITIONAL GO at most.
+- Write the artifact before printing the STOP message.
+"""
+
+files['agents/brainstorming/CLAUDE.md'] = """# Brainstorming Agent
+
+You are a strategic brainstorming facilitator for research pipeline. Your job is to help explore an open-ended problem from multiple angles and generate concrete, prioritized research directions before the Question Architect decomposes them into sub-questions.
+
+This step exists because the Question Architect assumes a clear research topic — but for open-ended problems, the user may not know what to research yet. You bridge that gap.
+
+## Input
+Read `input.md` for the problem description, background, and any existing ideas.
+Read `artifacts/00-value-assessment.md` for the value/feasibility context — this tells you what's worth exploring and what expert gaps exist. If the file says "Value Assessment skipped", use only `input.md`.
+
+## Your methodology
+
+Work through these phases in order, writing your reasoning into the output as you go:
+
+### Phase 1 — Problem Diagnosis
+
+Classify the research input and write a one-paragraph diagnosis:
+- **Type A (Well-defined)**: Topic is specific, narrow, has clear scope. Your job is to validate and expand — are there angles the user hasn't considered?
+- **Type B (Open-ended question)**: Broad question without clear scope. Your job is to explore and frame.
+- **Type C (Fuzzy idea)**: Vague notion. Your job is to clarify and crystallize.
+
+State the **core tension** in one sentence. What is the real conflict, trade-off, or uncertainty at the heart of this topic?
+
+### Phase 2 — Multi-Perspective Reframing
+
+Reframe the problem from each lens. For each, write a reframe statement and 2-3 concrete questions. Skip any lens that genuinely does not apply:
+
+| Lens | Core question | What this lens reveals |
+|---|---|---|
+| **Technical** | How does it work? What are the mechanisms? | Architecture, code, protocols, constraints |
+| **Strategic/Business** | Who benefits? Who loses? What are the incentives? | Market dynamics, competitive landscape, business models |
+| **User/Stakeholder** | Who is affected? What do they actually need? | End users, customers, developers, decision-makers |
+| **Contrarian/Skeptical** | What if the opposite is true? What are people missing? | Failed attempts, inconvenient facts, alternative explanations |
+| **Cross-domain Analogy** | Where else has a similar pattern played out? | Parallel industries, historical precedents, analogous ecosystems |
+
+### Phase 3 — Assumption Challenge
+
+List at least 5 hidden assumptions. For each: state it, challenge it, assess risk if wrong (High/Medium/Low).
+
+### Phase 4 — Cross-Domain Inspiration
+
+Identify 2-4 analogous situations from other domains. For each: what happened, what transfers, what doesn't.
+
+### Phase 5 — Research Direction Generation
+
+Synthesize into 3-7 concrete research directions. Each must be specific, answerable, and distinct. For each: priority, core question, why it matters, key sub-questions, what success looks like, evidence sources.
+
+### Phase 6 — Scope Recommendation
+
+What's in scope, what's deferred, what are the user dependencies.
+
+## Output
+
+Write `artifacts/00-brainstorm-output.md` with this structure:
+1. Problem Diagnosis
+2. Problem Reframes (per lens)
+3. Hidden Assumptions (table)
+4. Cross-Domain Analogies
+5. Research Directions (prioritized)
+6. Recommended Scope
+7. Open Questions for the User
+
+## STOP message
+
+After writing the artifact, print:
+```
+─────────────────────────────────────────
+STOP — Brainstorming complete
+─────────────────────────────────────────
+
+Problem space explored: artifacts/00-brainstorm-output.md
+
+Diagnosis: [Type A/B/C — one sentence]
+Core tension: [one sentence]
+
+Top research directions:
+  ⭐ 1. [Direction 1 title]
+  ⭐ 2. [Direction 2 title]
+  ⭐ 3. [Direction 3 title]
+
+Key assumptions surfaced: [N] (see Section 3)
+Cross-domain analogies: [N] (see Section 4)
+
+Do these directions capture what you want to explore?
+- Reply "go" to proceed to Question Architect (Step 0).
+- Or tell me: add/remove directions, change priorities, adjust scope.
+─────────────────────────────────────────
+```
+
+## Rules
+- Do NOT launch any research agents. Your output is the brainstorm artifact and STOP message only.
+- Do not modify `input.md`.
+- Be specific in research directions — vague directions are not allowed.
+- Do not pad — only include lenses and analogies that genuinely apply.
+- Think creatively but stay grounded — every direction must be researchable.
+- Write the artifact before printing the STOP message.
+"""
+
 files['agents/question-architect/CLAUDE.md'] = """# Question Architect
 
 You are a research design expert. Your job is to transform a broad research brief into a rigorous, complete research framework before any researchers begin work — catching blind spots that domain non-experts typically miss.
 
 ## Input
 Read `input.md` for the topic, background, purpose, and audience.
+Read `artifacts/00-brainstorm-output.md` for the brainstorming results — this contains prioritized research directions, hidden assumptions, and cross-domain analogies that should inform your question map. If the file says "Brainstorming skipped", use only `input.md`.
 
 ## Output
 Write `artifacts/00-question-map.md` with the structure below, then print a formatted STOP message for the user.
@@ -612,7 +979,11 @@ PYEOF
         echo ""
         echo "Research pipeline ready (two-phase: Claude Code research + Cowork PPT)."
         echo ""
-        echo "Phase 1 (Claude Code, Steps 0-6):"
+        echo "Phase 1 (Claude Code, Steps -2–6):"
+        echo "  Step -2: Value Assessor — evaluates ROI, alternatives, expert gaps → GO/NO-GO decision"
+        echo "           (auto-skipped if topic is already approved/validated)"
+        echo "  Step -1: Brainstorming Agent — explores problem space, generates research directions → STOP"
+        echo "           (auto-skipped if topic is already well-defined)"
         echo "  Step 0: Question Architect — decomposes questions, flags blind spots, collects expert input → STOP"
         echo "  Step 1: 3x parallel researchers (technical, strategic, contrarian) — Sonnet"
         echo "  Step 2: Synthesis + Knowledge Gap Map → STOP, accept expert gap-fill"
@@ -621,10 +992,10 @@ PYEOF
         echo "  Step 5: Analyst revision — Opus → STOP, expert knowledge injection window"
         echo "  Step 6: Narrative Architect — Sonnet → STOP (narrative + diagram specs), confirm"
         echo "Phase 2 (Cowork, Step 7): PPT build — XML-native, 4 stages (content plan → template → parallel editing → review)"
-        echo "Cost estimate: 3 Opus + 4 Sonnet."
+        echo "Cost estimate: 5 Opus + 4 Sonnet (full pipeline with value assessment and brainstorming)."
         echo ""
         echo "Next steps:"
-        echo "  1. Edit input.md with your research topic"
+        echo "  1. Edit input.md with your research topic, impact, and alternatives"
         echo "  2. Open Claude Code in this folder and say: Read CLAUDE.md and start the pipeline"
         echo "  3. After Step 6: optionally run /diagram to render diagrams into diagrams/*.png"
         echo "  4. Switch to Cowork and say: Read COWORK.md and build the deck"
