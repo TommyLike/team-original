@@ -12,6 +12,7 @@ tailored to a different goal.
 | `./init-pipeline.sh research` | Research-to-PPT pipeline |
 | `./init-pipeline.sh software` | Software development pipeline |
 | `./init-pipeline.sh study` | Learning guide builder |
+| `./init-pipeline.sh coding` | Open source codebase deep analysis |
 
 ### research
 
@@ -57,6 +58,24 @@ coding → test case development → testing → report.
 
 Topic decomposition → multi-lens resource curation → 7-day study plan
 draft → bias review → final polished output package.
+
+### coding
+
+```text
+Step 0: Project Surveyor  →  "What is this project?"
+          Identity · tech stack · community · repo structure
+           ↓
+Step 1:  3× Parallel Analysts   (architecture · modules · literature)
+           ↓
+Step 2:  Design Interpreter  →  "Why is it built this way?"
+          Design philosophy · key decisions · trade-offs · evolution
+           ↓
+Step 3:  Synthesis  →  Complete onboarding report + diagram specs
+```
+
+Combines code-level analysis with academic paper research, design document
+review, and competitive landscape mapping to help you rapidly understand
+any open source project.
 
 ## Quick Start
 
