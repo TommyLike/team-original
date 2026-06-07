@@ -13,6 +13,26 @@ usage() {
 
 [ $# -eq 0 ] && usage
 
+# --- Shared helper functions ---
+
+init_pipeline_log() {
+    echo "# Pipeline log" > artifacts/00-pipeline-log.md
+}
+
+init_empty_artifacts() {
+    for artifact in "$@"; do
+        : > "$artifact"
+    done
+}
+
+write_resume_file() {
+    local next_step="$1"
+    local body="$2"
+    printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: %s\n\n%s\n' "$next_step" "${body//\\n/$'\n'}" > CLAUDE-RESUME.md
+}
+
+# --- Pipeline branches ---
+
 case "$1" in
     research)
         echo "Setting up Cowork research pipeline in current directory..."
@@ -58,20 +78,23 @@ style: [exact skill name or keyword, e.g. "huawei", or leave blank for defaults]
 [Specific constraints: citation style, depth, audience, language, etc.]
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-value-assessment.md
-        : > artifacts/00-brainstorm-output.md
-        : > artifacts/00-question-map.md
-        : > artifacts/01a-research-technical.md
-        : > artifacts/01b-research-strategic.md
-        : > artifacts/01c-research-contrarian.md
-        : > artifacts/01-research.md
-        : > artifacts/02-analysis.md
-        : > artifacts/02a-challenges.md
-        : > artifacts/02-analysis-final.md
-        : > artifacts/03-narrative.md
-        : > artifacts/03-diagram-specs.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step -2 — Value Assessment (Claude Code phase)\n\n## Phases\n- **Claude Code** (Steps -2–6): value assessment, brainstorming, question design, research, analysis, narrative — run with: Read CLAUDE.md and start the pipeline\n- **Cowork** (Step 7): PPT build — run with: Read COWORK.md and build the deck\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-value-assessment.md \
+            artifacts/00-brainstorm-output.md \
+            artifacts/00-question-map.md \
+            artifacts/01a-research-technical.md \
+            artifacts/01b-research-strategic.md \
+            artifacts/01c-research-contrarian.md \
+            artifacts/01-research.md \
+            artifacts/02-analysis.md \
+            artifacts/02a-challenges.md \
+            artifacts/02-analysis-final.md \
+            artifacts/03-narrative.md \
+            artifacts/03-diagram-specs.md
+        write_resume_file \
+            "Step -2 — Value Assessment (Claude Code phase)" \
+            "## Phases\n- **Claude Code** (Steps -2–6): value assessment, brainstorming, question design, research, analysis, narrative — run with: Read CLAUDE.md and start the pipeline\n- **Cowork** (Step 7): PPT build — run with: Read COWORK.md and build the deck"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -1016,26 +1039,28 @@ PYEOF
         mkdir -p artifacts/src
 
         # Create artifacts/00-user-brief.md
-        cat > artifacts/00-user-brief.md << 'EOF'
+        cat > artifacts/00-user-brief.md << 'INPUTEOF'
 # User brief
 [Describe your project here before running the orchestrator]
-EOF
+INPUTEOF
 
-        # Create artifacts/00-pipeline-log.md
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
+        init_pipeline_log
 
-        # Create placeholder artifacts
-        : > artifacts/01-requirements.md
-        : > artifacts/01-requirements-qa.md
-        : > artifacts/02-architecture.md
-        : > artifacts/02-architecture-qa.md
-        : > artifacts/03-test-cases.md
-        : > artifacts/04-report.md
+        init_empty_artifacts \
+            artifacts/01-requirements.md \
+            artifacts/01-requirements-qa.md \
+            artifacts/02-architecture.md \
+            artifacts/02-architecture-qa.md \
+            artifacts/03-test-cases.md \
+            artifacts/04-report.md
+
+        write_resume_file \
+            "Step 1 — Requirements Agent" \
+            "## Pipeline steps\n- **Step 1**: Requirements Agent — generates structured requirements\n- **Step 1b**: Requirements QA Agent — reviews requirements\n- **Step 2**: Architect Agent — designs system architecture (optional)\n- **Step 2b**: Architect QA Agent — reviews architecture\n- **Step 3**: Coder Agent — implements code in artifacts/src/\n- **Step 3b**: Testcase Developer — writes test cases\n- **Step 4**: Tester Agent — runs tests, produces report\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write agent files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
 import os
-
 files = {}
 
 files['CLAUDE.md'] = """\
@@ -1278,25 +1303,32 @@ Write artifacts/04-report.md with:
 """
 
 for path, content in files.items():
-    dirpath = os.path.dirname(path)
-    if dirpath:
-        os.makedirs(dirpath, exist_ok=True)
-    with open(path, 'w') as f:
-        f.write(content)
+    os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(path) else None
+    open(path, 'w').write(content)
     print(f'  wrote {path}')
 PYEOF
 
         echo ""
         echo "Software development pipeline ready."
         echo ""
-        echo "Created structure:"
-        find . -type f -name "*.md" | sort
+        echo "Pipeline steps:"
+        echo "  Step 1: Requirements Agent — generates structured requirements"
+        echo "  Step 1b: Requirements QA Agent — reviews requirements"
+        echo "  Step 2: Architect Agent — designs system architecture (optional)"
+        echo "  Step 2b: Architect QA Agent — reviews architecture"
+        echo "  Step 3: Coder Agent — implements code in artifacts/src/"
+        echo "  Step 3b: Testcase Developer — writes test cases"
+        echo "  Step 4: Tester Agent — runs tests, produces report"
         echo ""
-        echo "Agents: requirements → requirements-qa → architect (optional) → architect-qa → coder → testcase-dev → tester"
-        echo "QA agents catch Critical/Contradiction issues before proceeding."
-        echo "Code output: artifacts/src/"
+        echo "Cost estimate: varies by project complexity"
         echo ""
-        echo "Next step: fill in artifacts/00-user-brief.md, then say: Read CLAUDE.md and start the pipeline"
+        echo "Output:"
+        echo "  artifacts/04-report.md — final test report"
+        echo "  artifacts/src/ — generated code"
+        echo ""
+        echo "Next steps:"
+        echo "  1. Edit artifacts/00-user-brief.md with your project description"
+        echo '  2. Open Claude Code and say: Read CLAUDE.md and start the pipeline'
         ;;
         
 
@@ -1327,17 +1359,20 @@ Example: "理解 Docker 核心概念，能写 Dockerfile，能用 docker-compose
 [Any preferences: learning style, resource types, specific subtopics to emphasize or skip]
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-learning-framework.md
-        : > artifacts/01a-authority-resources.md
-        : > artifacts/01b-community-resources.md
-        : > artifacts/01c-critical-perspectives.md
-        : > artifacts/02-study-plan-draft.md
-        : > artifacts/03-bias-review.md
-        : > output/weekly-study-plan.md
-        : > output/resource-index.md
-        : > output/self-assessment.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Learning Architect\n\n## Pipeline steps\n- **Step 0**: Learning Architect — decomposes topic into knowledge map\n- **Step 1**: 3× parallel curators (Authority, Community, Critical)\n- **Step 2**: Study Plan Design — draft 7-day plan → STOP for user review\n- **Step 3**: Bias Review — adversarial quality audit\n- **Step 4**: Final Revision — polished output package\n\n## Output\n- `output/weekly-study-plan.md` — 7-day structured learning plan\n- `output/resource-index.md` — annotated resource catalog\n- `output/self-assessment.md` — comprehensive self-check and mini-project\n\n## How to run\nOpen Claude Code in this folder and say: `Read CLAUDE.md and start the pipeline`\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-learning-framework.md \
+            artifacts/01a-authority-resources.md \
+            artifacts/01b-community-resources.md \
+            artifacts/01c-critical-perspectives.md \
+            artifacts/02-study-plan-draft.md \
+            artifacts/03-bias-review.md \
+            output/weekly-study-plan.md \
+            output/resource-index.md \
+            output/self-assessment.md
+        write_resume_file \
+            "Step 0 — Learning Architect" \
+            "## Pipeline steps\n- **Step 0**: Learning Architect — decomposes topic into knowledge map\n- **Step 1**: 3× parallel curators (Authority, Community, Critical)\n- **Step 2**: Study Plan Design — draft 7-day plan → STOP for user review\n- **Step 3**: Bias Review — adversarial quality audit\n- **Step 4**: Final Revision — polished output package\n\n## Output\n- \`output/weekly-study-plan.md\` — 7-day structured learning plan\n- \`output/resource-index.md\` — annotated resource catalog\n- \`output/self-assessment.md\` — comprehensive self-check and mini-project\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -2077,14 +2112,17 @@ repo_url: [GitHub/GitLab URL or local path to the repository]
 [Default: English for artifacts. Specify if you want Chinese output for any section.]
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-overview.md
-        : > artifacts/01-architecture.md
-        : > artifacts/01-module-analysis.md
-        : > artifacts/01-literature-review.md
-        : > artifacts/02-design-decisions.md
-        : > artifacts/03-final-report.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Project Surveyor\n\n## Pipeline steps\n- **Step 0**: Project Surveyor — repo overview and scope confirmation\n- **Step 1**: 3× parallel agents (Architecture Mapper, Module Deep-Diver, Literature & Context Analyst)\n- **Step 2**: Design Interpreter — design decisions, trade-offs, evolution\n- **Step 3**: Synthesis — final onboarding report with diagram specs\n\n## How to run\nOpen Claude Code in this folder and say: `Read CLAUDE.md and start the pipeline`\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-overview.md \
+            artifacts/01-architecture.md \
+            artifacts/01-module-analysis.md \
+            artifacts/01-literature-review.md \
+            artifacts/02-design-decisions.md \
+            artifacts/03-final-report.md
+        write_resume_file \
+            "Step 0 — Project Surveyor" \
+            "## Pipeline steps\n- **Step 0**: Project Surveyor — repo overview and scope confirmation\n- **Step 1**: 3× parallel agents (Architecture Mapper, Module Deep-Diver, Literature & Context Analyst)\n- **Step 2**: Design Interpreter — design decisions, trade-offs, evolution\n- **Step 3**: Synthesis — final onboarding report with diagram specs\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
