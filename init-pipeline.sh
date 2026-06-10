@@ -443,9 +443,70 @@ Output: `artifacts/03-report.md` — the canonical complete report (format-agnos
 - **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`, see the detailed step below), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
 
 Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: convert `03-report.md` to `artifacts/05-report.html` applying a CSS stylesheet (CJK font e.g. Microsoft YaHei / Noto Sans CJK, table borders, `@page` margins, and page-break rules so headings/tables do not split badly), then render the HTML to `artifacts/05-report.pdf` with a headless HTML-to-PDF renderer (weasyprint, or headless Chromium). Tell the user when done.
+- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
 - For PPTX: proceed to the Narrative Architect step below, then hand to Cowork.
 - If the user only wants the Markdown report, you are done.
+
+#### PDF generation recipe (MUST follow exactly)
+
+**Step 1 — Convert Markdown to styled HTML**
+
+Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
+
+**Step 2 — CSS (MUST embed these @font-face rules)**
+
+The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
+
+Recommended CSS (platform-aware — detect the OS and use the right block):
+
+```css
+/* === macOS CJK fonts (use these on darwin) === */
+@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
+
+/* === Linux CJK fonts (use these on Linux) === */
+/* Install first: apt-get install fonts-noto-cjk */
+@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
+
+/* === page setup === */
+@page { size: A4; margin: 2cm 2.2cm; }
+body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
+       line-height: 1.6; color: #1a1a1a; }
+h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; }
+h3 { font-size: 12pt; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
+th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
+th { background: #f0f0f0; font-weight: bold; }
+pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
+img { max-width: 100%; page-break-inside: avoid; }
+```
+
+**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
+
+Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
+
+```bash
+# Option A: Playwright (preferred — handles CJK natively)
+npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
+
+# Option B: Chromium headless
+chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
+  --no-pdf-header-footer artifacts/05-report.html
+```
+
+**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
+
+**Step 4 — Verify the PDF**
+
+After generation, check the PDF:
+1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
+2. Verify tables have borders and are not split across pages badly.
+3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
 
 ### Step 7 — Narrative Architect
 
@@ -3314,7 +3375,7 @@ Agent: `paper-analyst`, model: sonnet (bump to opus for dense theory papers).
 Input: the user-supplied paper list (arXiv IDs/URLs) + `artifacts/01-research.md`.
 Output: `artifacts/01e-paper-analysis.md` + one Chinese translation file per paper under `papers/`.
 
-Pass the confirmed seed paper list in the agent prompt. The agent reads each seed paper, writes a Chinese translation to `papers/<arxiv-id>-zh.md`, and writes the consolidated analysis to `artifacts/01e-paper-analysis.md`.
+Pass the confirmed seed paper list in the agent prompt. **CRITICAL — add this line verbatim to the agent prompt:** "You MUST invoke the `read-arxiv-paper` and `arxiv-paper-translator` skills via the Skill tool for every paper. WebFetch/WebSearch are NOT acceptable substitutes. See your CLAUDE.md for the mandatory workflow."
 
 After the agent returns:
 1. Merge its key findings into `artifacts/01-research.md` under a new subsection `## Paper Deep-Dive (added at Step 2.5)`, preserving numbers and citations, and update the Knowledge Gap Map if any `★`/`✗` items are now resolved.
@@ -3394,9 +3455,70 @@ Output: `artifacts/03-report.md` — the final technical assessment report.
 - **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
 
 Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: convert `03-report.md` to `artifacts/05-report.html` applying a CSS stylesheet (CJK font e.g. Microsoft YaHei / Noto Sans CJK, table borders, `@page` margins, and page-break rules so headings/tables do not split badly), then render the HTML to `artifacts/05-report.pdf` with a headless HTML-to-PDF renderer (weasyprint, or headless Chromium). Tell the user when done.
+- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
 - For PPTX: launch `narrative-architect` (model: sonnet) reading `03-report.md`. After it writes `04-narrative.md` + `04-diagram-specs.md`, STOP and show the narrative skeleton + diagram list for confirmation. On confirm, optionally run `/diagram`, then hand to Cowork: "Read COWORK.md and build the deck."
 - If the user only wants the Markdown report, you are done.
+
+#### PDF generation recipe (MUST follow exactly)
+
+**Step 1 — Convert Markdown to styled HTML**
+
+Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
+
+**Step 2 — CSS (MUST embed these @font-face rules)**
+
+The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
+
+Recommended CSS (platform-aware — detect the OS and use the right block):
+
+```css
+/* === macOS CJK fonts (use these on darwin) === */
+@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
+
+/* === Linux CJK fonts (use these on Linux) === */
+/* Install first: apt-get install fonts-noto-cjk */
+@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
+
+/* === page setup === */
+@page { size: A4; margin: 2cm 2.2cm; }
+body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
+       line-height: 1.6; color: #1a1a1a; }
+h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; }
+h3 { font-size: 12pt; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
+th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
+th { background: #f0f0f0; font-weight: bold; }
+pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
+img { max-width: 100%; page-break-inside: avoid; }
+```
+
+**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
+
+Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
+
+```bash
+# Option A: Playwright (preferred — handles CJK natively)
+npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
+
+# Option B: Chromium headless
+chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
+  --no-pdf-header-footer artifacts/05-report.html
+```
+
+**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
+
+**Step 4 — Verify the PDF**
+
+After generation, check the PDF:
+1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
+2. Verify tables have borders and are not split across pages badly.
+3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
 
 ---
 
@@ -3638,18 +3760,70 @@ You are a research-paper analyst. You run ONLY when the user explicitly requests
 - artifacts/01-research.md (so your analysis connects to what the researchers already found).
 - input.md (for the assessment's focus and audience).
 
-## Skills you must use
-- `read-arxiv-paper` — to read each seed paper's full text given its arXiv URL/ID.
-- `arxiv-paper-translator` — to produce a Chinese translation of each seed paper.
-Invoke these via the Skill tool. If a skill is unavailable, note it and fall back to reading the paper's abstract/HTML directly, marking the analysis as partial.
+---
+
+## MANDATORY workflow — one paper at a time
+
+For EACH seed paper, you MUST execute BOTH steps below. Process papers sequentially (not in parallel) to avoid context overload.
+
+### Step A — Read the paper (MUST use read-arxiv-paper skill)
+
+```
+Skill: read-arxiv-paper
+Args: <arXiv URL or ID, e.g. "https://arxiv.org/abs/2601.07372" or "2601.07372">
+```
+
+This skill downloads the full TeX source, unpacks it, locates the entrypoint .tex file, and reads the complete paper content. The skill writes a summary to `./knowledge/summary_{tag}.md` by default — you can ignore that path; the value is that it reads the ENTIRE paper (not just the abstract).
+
+**HARD PROHIBITION:** Do NOT use WebFetch, WebSearch, `curl`, `wget`, or any direct HTTP tool to fetch the paper. Do NOT read only the abstract page (abs/*) on arXiv — that gives you ~200 words of abstract, which is NOT the paper. The only acceptable path to paper content is through the `read-arxiv-paper` skill.
+
+**If the skill genuinely fails** (tool error, not "I decided not to call it"): retry once. If it still fails, mark that paper as `[PARTIAL — skill unavailable]` and proceed to the next paper. Do NOT silently substitute with WebFetch.
+
+### Step B — Translate to Chinese (MUST use arxiv-paper-translator skill)
+
+```
+Skill: arxiv-paper-translator
+Args: <arXiv ID, e.g. "2601.07372">
+```
+
+This skill downloads the LaTeX source, translates all narrative content to Chinese, reviews the translation, adds CJK font support, and compiles a translated PDF + technical report.
+
+For the tech pipeline's purposes, you need the CHINESE TRANSLATION and the TECHNICAL REPORT. The compiled PDF is a bonus.
+
+After the skill completes:
+- The translated .tex source is in `arXiv_<id>/paper_cn/`.
+- The technical report (if generated) is at `arXiv_<id>/technical_report.md`.
+
+From this, produce `papers/<arxiv-id>-zh.md` — a self-contained Chinese markdown document containing:
+1. The paper's Chinese title, authors, and arXiv link
+2. The translated abstract
+3. The translated key content (method, results, conclusions) — use the translator's output, not your own summary
+4. A note that the full compiled Chinese PDF is at `arXiv_<id>/paper_cn/<main>.pdf` (if compilation succeeded)
+
+**If the skill genuinely fails** (tool error, missing XeLaTeX/Docker, etc.): note it, and produce a fallback translation using the full paper content you already read in Step A. Mark the output as `[PARTIAL — manual translation]`. Do NOT skip the translation step without attempting the skill first.
+
+---
+
+## Skill invocation reference
+
+| Purpose | Skill name | Args example |
+|---|---|---|
+| Read full paper | `read-arxiv-paper` | `"2601.07372"` or `"https://arxiv.org/abs/2601.07372"` |
+| Translate to Chinese | `arxiv-paper-translator` | `"2601.07372"` |
+
+Always invoke these via the **Skill tool** (`Skill` function). Both skills accept arXiv IDs directly.
+
+---
 
 ## Output
+
 ### 1. Chinese translations
-For EACH seed paper, write a Chinese translation to `papers/<arxiv-id>-zh.md` (use the arXiv id as the slug, e.g. `papers/2206.04655-zh.md`).
+For EACH seed paper, write `papers/<arxiv-id>-zh.md` per Step B above.
 
 ### 2. Consolidated analysis → artifacts/01e-paper-analysis.md
 For each seed paper, a block:
 #### [arXiv id] Title
+- **Skills used**: [e.g. read-arxiv-paper ✓, arxiv-paper-translator ✓] — be explicit; this is your quality audit trail
 - **Translation**: papers/<id>-zh.md
 - **Problem & method**: what it does and how (1-3 sentences).
 - **Key results**: headline numbers, benchmarks, sample sizes — quoted, with the paper's own figures/tables.
@@ -3658,10 +3832,16 @@ For each seed paper, a block:
 
 Then a final section:
 ### Derived papers (listed, NOT analyzed)
-List notable papers cited by (or citing) the seeds that look central, each with one line on why it might matter. Do NOT read or translate these — they are candidates for a future round if the user wants to go deeper.
+List notable papers cited by (or citing) the seeds that look central, each with one line on why it might matter. Do NOT read or translate these.
+
+---
 
 ## Rules
-- Only deep-analyze the seed papers the user supplied. Do NOT auto-expand into cited papers — just list them under Derived papers.
+- Process papers ONE AT A TIME (Step A → Step B → next paper). Do not batch or parallelize.
+- For every paper, the Skill tool MUST be called for both steps. There is no shortcut.
+- WebFetch / WebSearch / curl / wget are FORBIDDEN for obtaining paper content. The only exception is if BOTH skills fail, which should be rare.
+- The "Skills used" line in the analysis block is your audit trail — it must reflect reality. If a skill wasn't used, say so and explain why.
+- Only deep-analyze the seed papers the user supplied. Do NOT auto-expand into cited papers.
 - Preserve all numbers, benchmark values, and figures exactly; cite the section/figure/table.
 - Write the analysis in the report language (default Chinese, per artifacts/00-pipeline-log.md).
 - The Chinese translations are full-paper translations for reference — do not compress them into summaries.
