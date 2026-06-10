@@ -443,9 +443,70 @@ Output: `artifacts/03-report.md` — the canonical complete report (format-agnos
 - **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`, see the detailed step below), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
 
 Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: convert `03-report.md` to `artifacts/05-report.html` applying a CSS stylesheet (CJK font e.g. Microsoft YaHei / Noto Sans CJK, table borders, `@page` margins, and page-break rules so headings/tables do not split badly), then render the HTML to `artifacts/05-report.pdf` with a headless HTML-to-PDF renderer (weasyprint, or headless Chromium). Tell the user when done.
+- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
 - For PPTX: proceed to the Narrative Architect step below, then hand to Cowork.
 - If the user only wants the Markdown report, you are done.
+
+#### PDF generation recipe (MUST follow exactly)
+
+**Step 1 — Convert Markdown to styled HTML**
+
+Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
+
+**Step 2 — CSS (MUST embed these @font-face rules)**
+
+The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
+
+Recommended CSS (platform-aware — detect the OS and use the right block):
+
+```css
+/* === macOS CJK fonts (use these on darwin) === */
+@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
+
+/* === Linux CJK fonts (use these on Linux) === */
+/* Install first: apt-get install fonts-noto-cjk */
+@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
+
+/* === page setup === */
+@page { size: A4; margin: 2cm 2.2cm; }
+body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
+       line-height: 1.6; color: #1a1a1a; }
+h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; }
+h3 { font-size: 12pt; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
+th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
+th { background: #f0f0f0; font-weight: bold; }
+pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
+img { max-width: 100%; page-break-inside: avoid; }
+```
+
+**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
+
+Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
+
+```bash
+# Option A: Playwright (preferred — handles CJK natively)
+npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
+
+# Option B: Chromium headless
+chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
+  --no-pdf-header-footer artifacts/05-report.html
+```
+
+**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
+
+**Step 4 — Verify the PDF**
+
+After generation, check the PDF:
+1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
+2. Verify tables have borders and are not split across pages badly.
+3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
 
 ### Step 7 — Narrative Architect
 
@@ -3394,9 +3455,70 @@ Output: `artifacts/03-report.md` — the final technical assessment report.
 - **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
 
 Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: convert `03-report.md` to `artifacts/05-report.html` applying a CSS stylesheet (CJK font e.g. Microsoft YaHei / Noto Sans CJK, table borders, `@page` margins, and page-break rules so headings/tables do not split badly), then render the HTML to `artifacts/05-report.pdf` with a headless HTML-to-PDF renderer (weasyprint, or headless Chromium). Tell the user when done.
+- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
 - For PPTX: launch `narrative-architect` (model: sonnet) reading `03-report.md`. After it writes `04-narrative.md` + `04-diagram-specs.md`, STOP and show the narrative skeleton + diagram list for confirmation. On confirm, optionally run `/diagram`, then hand to Cowork: "Read COWORK.md and build the deck."
 - If the user only wants the Markdown report, you are done.
+
+#### PDF generation recipe (MUST follow exactly)
+
+**Step 1 — Convert Markdown to styled HTML**
+
+Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
+
+**Step 2 — CSS (MUST embed these @font-face rules)**
+
+The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
+
+Recommended CSS (platform-aware — detect the OS and use the right block):
+
+```css
+/* === macOS CJK fonts (use these on darwin) === */
+@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
+
+/* === Linux CJK fonts (use these on Linux) === */
+/* Install first: apt-get install fonts-noto-cjk */
+@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
+@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
+@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
+
+/* === page setup === */
+@page { size: A4; margin: 2cm 2.2cm; }
+body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
+       line-height: 1.6; color: #1a1a1a; }
+h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
+h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 14pt; }
+h3 { font-size: 12pt; }
+table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
+th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
+th { background: #f0f0f0; font-weight: bold; }
+pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
+img { max-width: 100%; page-break-inside: avoid; }
+```
+
+**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
+
+Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
+
+```bash
+# Option A: Playwright (preferred — handles CJK natively)
+npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
+
+# Option B: Chromium headless
+chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
+  --no-pdf-header-footer artifacts/05-report.html
+```
+
+**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
+
+**Step 4 — Verify the PDF**
+
+After generation, check the PDF:
+1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
+2. Verify tables have borders and are not split across pages badly.
+3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
 
 ---
 
