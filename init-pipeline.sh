@@ -14,6 +14,26 @@ usage() {
 
 [ $# -eq 0 ] && usage
 
+# --- Shared helper functions ---
+
+init_pipeline_log() {
+    echo "# Pipeline log" > artifacts/00-pipeline-log.md
+}
+
+init_empty_artifacts() {
+    for artifact in "$@"; do
+        : > "$artifact"
+    done
+}
+
+write_resume_file() {
+    local next_step="$1"
+    local body="$2"
+    printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: %s\n\n%s\n' "$next_step" "${body//\\n/$'\n'}" > CLAUDE-RESUME.md
+}
+
+# --- Pipeline branches ---
+
 case "$1" in
     research)
         echo "Setting up Cowork research pipeline in current directory..."
@@ -25,6 +45,29 @@ case "$1" in
         mkdir -p agents/analyst agents/devils-advocate agents/narrative-architect agents/report-writer
         mkdir -p artifacts/versions artifacts/slide-screenshots docs memory
         mkdir -p diagrams/src
+        mkdir -p input/pdf input/web input/repo
+
+        cat > input/README.md << 'INPUTEOF'
+# Input Materials Manifest
+
+Raw source materials organized by type. Agents update this file as they discover and save new materials.
+
+## PDF (`input/pdf/`)
+| File | Source | Added | Notes |
+|------|--------|-------|-------|
+
+## Web (`input/web/`)
+| Title | URL | Fetched | Notes |
+|-------|-----|---------|-------|
+
+## Repo (`input/repo/`)
+| Repository | Branch/Commit | Cloned | Notes |
+|------------|---------------|--------|-------|
+
+> Agents: before starting, check this manifest for available materials.
+> When you discover new PDFs, web pages, or repos during research,
+> save them to the corresponding `input/` directory and update this table.
+INPUTEOF
 
         cat > input.md << 'INPUTEOF'
 # Research topic
@@ -57,23 +100,34 @@ style: [exact skill name or keyword, e.g. "huawei", or leave blank for defaults]
 
 # Analysis requirements
 [Specific constraints: citation style, depth, audience, language, etc.]
+
+# Source materials (input/)
+Place raw materials in the `input/` directory, organized by type:
+- `input/pdf/` — PDF papers, reports, documentation
+- `input/web/` — web page snapshots (Markdown format)
+- `input/repo/` — git repository clones or references
+
+See `input/README.md` for the full manifest. Agents will discover,
+save, and catalog materials here throughout the pipeline.
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-value-assessment.md
-        : > artifacts/00-brainstorm-output.md
-        : > artifacts/00-question-map.md
-        : > artifacts/01a-research-technical.md
-        : > artifacts/01b-research-strategic.md
-        : > artifacts/01c-research-contrarian.md
-        : > artifacts/01-research.md
-        : > artifacts/02-analysis.md
-        : > artifacts/02a-challenges.md
-        : > artifacts/02-analysis-final.md
-        : > artifacts/03-report.md
-        : > artifacts/04-narrative.md
-        : > artifacts/04-diagram-specs.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step -2 — Value Assessment (Claude Code phase)\n\n## Phases\n- **Claude Code** (Steps -2–6): value assessment, brainstorming, question design, research, analysis, canonical report — run with: Read CLAUDE.md and start the pipeline\n- **Step 7 — Output**: Markdown (always) / PDF / PPTX (PPTX via Cowork: Read COWORK.md and build the deck)\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-value-assessment.md \
+            artifacts/00-brainstorm-output.md \
+            artifacts/00-question-map.md \
+            artifacts/01a-research-technical.md \
+            artifacts/01b-research-strategic.md \
+            artifacts/01c-research-contrarian.md \
+            artifacts/01-research.md \
+            artifacts/02-analysis.md \
+            artifacts/02a-challenges.md \
+            artifacts/02-analysis-final.md \
+            artifacts/03-narrative.md \
+            artifacts/03-diagram-specs.md
+        write_resume_file \
+            "Step -2 — Value Assessment (Claude Code phase)" \
+            "## Phases\n- **Claude Code** (Steps -2–6): value assessment, brainstorming, question design, research, analysis, canonical report — run with: Read CLAUDE.md and start the pipeline\n- **Step 7 — Output**: Markdown (always) / PDF / PPTX (PPTX via Cowork: Read COWORK.md and build the deck)"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -154,6 +208,8 @@ Step 7: Narrative Architect (Agent subagent, Sonnet)
   "
 ```
 
+**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+
 ---
 
 ## Model confirmation
@@ -193,18 +249,20 @@ Use the confirmed models when launching every agent below.
 
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| -2 | value-assessor | opus | input.md | artifacts/00-value-assessment.md |
-| -1 | brainstorming | opus | input.md + 00-value-assessment.md | artifacts/00-brainstorm-output.md |
-| 0 | question-architect | opus | input.md + 00-brainstorm-output.md | artifacts/00-question-map.md |
-| 1a | researcher-technical | sonnet | input.md + 00-question-map.md | artifacts/01a-research-technical.md |
-| 1b | researcher-strategic | sonnet | input.md + 00-question-map.md | artifacts/01b-research-strategic.md |
-| 1c | researcher-contrarian | sonnet | input.md + 00-question-map.md | artifacts/01c-research-contrarian.md |
-| 2 | *(Claude Code directly)* | — | 01a/b/c + input.md + 00-question-map.md | artifacts/01-research.md |
-| 3 | analyst (first pass) | opus | 01-research.md + input.md | artifacts/02-analysis.md |
-| 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md | artifacts/02a-challenges.md |
-| 5 | analyst (revision) | opus | 02a-challenges.md + 02-analysis.md | artifacts/02-analysis-final.md |
-| 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md | artifacts/03-report.md |
-| 7 | narrative-architect | sonnet | 03-report.md + input.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
+| -2 | value-assessor | opus | input.md + input/README.md | artifacts/00-value-assessment.md |
+| -1 | brainstorming | opus | input.md + input/README.md + 00-value-assessment.md | artifacts/00-brainstorm-output.md |
+| 0 | question-architect | opus | input.md + input/README.md + 00-brainstorm-output.md | artifacts/00-question-map.md |
+| 1a | researcher-technical | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01a-research-technical.md |
+| 1b | researcher-strategic | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01b-research-strategic.md |
+| 1c | researcher-contrarian | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01c-research-contrarian.md |
+| 2 | *(Claude Code directly)* | — | 01a/b/c + input.md + input/README.md + 00-question-map.md | artifacts/01-research.md |
+| 3 | analyst (first pass) | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
+| 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md + input/README.md | artifacts/02a-challenges.md |
+| 5 | analyst (revision) | opus | 02a-challenges.md + 02-analysis.md + input/README.md | artifacts/02-analysis-final.md |
+| 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md + input/README.md | artifacts/03-report.md |
+| 7 | narrative-architect | sonnet | 03-report.md + input.md + input/README.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
+
+All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
 
 ---
 
@@ -582,6 +640,7 @@ Maintain `artifacts/00-pipeline-log.md` throughout. Record:
 9. Never modify existing artifacts from completed steps without telling the user first.
 10. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
    and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
+11. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
 """
 files['agents/value-assessor/CLAUDE.md'] = """# Value Assessor
 
@@ -1136,23 +1195,58 @@ PYEOF
         mkdir -p agents/testcase-dev
         mkdir -p agents/tester
         mkdir -p artifacts/src
+        mkdir -p input/pdf input/web input/repo
+
+        cat > input/README.md << 'INPUTEOF'
+# Input Materials Manifest
+
+Raw source materials organized by type. Agents update this file as they discover and save new materials.
+
+## PDF (`input/pdf/`)
+| File | Source | Added | Notes |
+|------|--------|-------|-------|
+
+## Web (`input/web/`)
+| Title | URL | Fetched | Notes |
+|-------|-----|---------|-------|
+
+## Repo (`input/repo/`)
+| Repository | Branch/Commit | Cloned | Notes |
+|------------|---------------|--------|-------|
+
+> Agents: before starting, check this manifest for available materials.
+> When you discover new PDFs, web pages, or repos during development,
+> save them to the corresponding `input/` directory and update this table.
+INPUTEOF
 
         # Create artifacts/00-user-brief.md
-        cat > artifacts/00-user-brief.md << 'EOF'
+        cat > artifacts/00-user-brief.md << 'INPUTEOF'
 # User brief
 [Describe your project here before running the orchestrator]
-EOF
 
-        # Create artifacts/00-pipeline-log.md
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
+# Source materials (input/)
+Place raw materials in the `input/` directory, organized by type:
+- `input/pdf/` — PDF papers, reports, documentation
+- `input/web/` — web page snapshots (Markdown format)
+- `input/repo/` — git repository clones or references
 
-        # Create placeholder artifacts
-        : > artifacts/01-requirements.md
-        : > artifacts/01-requirements-qa.md
-        : > artifacts/02-architecture.md
-        : > artifacts/02-architecture-qa.md
-        : > artifacts/03-test-cases.md
-        : > artifacts/04-report.md
+See `input/README.md` for the full manifest. Agents will discover,
+save, and catalog materials here throughout the pipeline.
+INPUTEOF
+
+        init_pipeline_log
+
+        init_empty_artifacts \
+            artifacts/01-requirements.md \
+            artifacts/01-requirements-qa.md \
+            artifacts/02-architecture.md \
+            artifacts/02-architecture-qa.md \
+            artifacts/03-test-cases.md \
+            artifacts/04-report.md
+
+        write_resume_file \
+            "Step 1 — Requirements Agent" \
+            "## Pipeline steps\n- **Step 1**: Requirements Agent — generates structured requirements\n- **Step 1b**: Requirements QA Agent — reviews requirements\n- **Step 2**: Architect Agent — designs system architecture (optional)\n- **Step 2b**: Architect QA Agent — reviews architecture\n- **Step 3**: Coder Agent — implements code in artifacts/src/\n- **Step 3b**: Testcase Developer — writes test cases\n- **Step 4**: Tester Agent — runs tests, produces report\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write agent files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -1206,6 +1300,8 @@ Suggested models:
 3b. Run agents/testcase-dev/ → produces artifacts/03-test-cases.md (after coder completes)
 4. Run agents/tester/ → produces artifacts/04-report.md
 
+All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
+
 ## Completion notification (REQUIRED — run after the final step)
 
 When the pipeline finishes (after the tester writes artifacts/04-report.md), run this command to send a macOS notification:
@@ -1227,6 +1323,7 @@ Then print a summary to the user:
 - After each step, verify the artifact exists and is non-empty before proceeding.
 - If the tester reports failures, return to the coder agent with the failure context.
 - Keep a running log in artifacts/00-pipeline-log.md (date, step, status, notes).
+- **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
 """
 
 files['agents/requirements/CLAUDE.md'] = """\
@@ -1400,11 +1497,8 @@ Write artifacts/04-report.md with:
 """
 
 for path, content in files.items():
-    dirpath = os.path.dirname(path)
-    if dirpath:
-        os.makedirs(dirpath, exist_ok=True)
-    with open(path, 'w') as f:
-        f.write(content)
+    os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(path) else None
+    open(path, 'w').write(content)
     print(f'  wrote {path}')
 PYEOF
 
@@ -1429,6 +1523,29 @@ PYEOF
         mkdir -p agents/authority-curator agents/community-curator agents/critical-curator
         mkdir -p agents/bias-reviewer agents/curriculum-editor
         mkdir -p artifacts output
+        mkdir -p input/pdf input/web input/repo
+
+        cat > input/README.md << 'INPUTEOF'
+# Input Materials Manifest
+
+Raw source materials organized by type. Agents update this file as they discover and save new materials.
+
+## PDF (`input/pdf/`)
+| File | Source | Added | Notes |
+|------|--------|-------|-------|
+
+## Web (`input/web/`)
+| Title | URL | Fetched | Notes |
+|-------|-----|---------|-------|
+
+## Repo (`input/repo/`)
+| Repository | Branch/Commit | Cloned | Notes |
+|------------|---------------|--------|-------|
+
+> Agents: before starting, check this manifest for available materials.
+> When you discover new PDFs, web pages, or repos during learning research,
+> save them to the corresponding `input/` directory and update this table.
+INPUTEOF
 
         cat > input.md << 'INPUTEOF'
 # 学习主题
@@ -1447,19 +1564,31 @@ Example: "理解 Docker 核心概念，能写 Dockerfile，能用 docker-compose
 
 # 偏好 (可选)
 [Any preferences: learning style, resource types, specific subtopics to emphasize or skip]
+
+# Source materials (input/)
+Place raw materials in the `input/` directory, organized by type:
+- `input/pdf/` — PDF papers, reports, documentation
+- `input/web/` — web page snapshots (Markdown format)
+- `input/repo/` — git repository clones or references
+
+See `input/README.md` for the full manifest. Agents will discover,
+save, and catalog materials here throughout the pipeline.
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-learning-framework.md
-        : > artifacts/01a-authority-resources.md
-        : > artifacts/01b-community-resources.md
-        : > artifacts/01c-critical-perspectives.md
-        : > artifacts/02-study-plan-draft.md
-        : > artifacts/03-bias-review.md
-        : > output/weekly-study-plan.md
-        : > output/resource-index.md
-        : > output/self-assessment.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Learning Architect\n\n## Pipeline steps\n- **Step 0**: Learning Architect — decomposes topic into knowledge map\n- **Step 1**: 3× parallel curators (Authority, Community, Critical)\n- **Step 2**: Study Plan Design — draft 7-day plan → STOP for user review\n- **Step 3**: Bias Review — adversarial quality audit\n- **Step 4**: Final Revision — polished output package\n\n## Output\n- `output/weekly-study-plan.md` — 7-day structured learning plan\n- `output/resource-index.md` — annotated resource catalog\n- `output/self-assessment.md` — comprehensive self-check and mini-project\n\n## How to run\nOpen Claude Code in this folder and say: `Read CLAUDE.md and start the pipeline`\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-learning-framework.md \
+            artifacts/01a-authority-resources.md \
+            artifacts/01b-community-resources.md \
+            artifacts/01c-critical-perspectives.md \
+            artifacts/02-study-plan-draft.md \
+            artifacts/03-bias-review.md \
+            output/weekly-study-plan.md \
+            output/resource-index.md \
+            output/self-assessment.md
+        write_resume_file \
+            "Step 0 — Learning Architect" \
+            "## Pipeline steps\n- **Step 0**: Learning Architect — decomposes topic into knowledge map\n- **Step 1**: 3× parallel curators (Authority, Community, Critical)\n- **Step 2**: Study Plan Design — draft 7-day plan → STOP for user review\n- **Step 3**: Bias Review — adversarial quality audit\n- **Step 4**: Final Revision — polished output package\n\n## Output\n- \`output/weekly-study-plan.md\` — 7-day structured learning plan\n- \`output/resource-index.md\` — annotated resource catalog\n- \`output/self-assessment.md\` — comprehensive self-check and mini-project\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -1509,6 +1638,8 @@ Step 4: Final Revision (Agent subagent, Opus) → 3 output files
    Start with weekly-study-plan.md and follow Day 1."
 ```
 
+**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+
 ---
 
 ## Model confirmation
@@ -1540,13 +1671,15 @@ Use the confirmed models when launching every agent below.
 
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| 0 | learning-architect | opus | input.md | artifacts/00-learning-framework.md |
-| 1a | authority-curator | sonnet | input.md + 00-learning-framework.md | artifacts/01a-authority-resources.md |
-| 1b | community-curator | sonnet | input.md + 00-learning-framework.md | artifacts/01b-community-resources.md |
-| 1c | critical-curator | sonnet | input.md + 00-learning-framework.md | artifacts/01c-critical-perspectives.md |
-| 2 | *(Claude Code directly)* | — | 01a/b/c + 00-learning-framework.md + input.md | artifacts/02-study-plan-draft.md |
-| 3 | bias-reviewer | sonnet | 02-study-plan-draft.md + 01a/b/c + 00-learning-framework.md + input.md | artifacts/03-bias-review.md |
-| 4 | curriculum-editor | opus | 02-study-plan-draft.md + 03-bias-review.md + 01a/b/c + 00-learning-framework.md + input.md | output/weekly-study-plan.md + output/resource-index.md + output/self-assessment.md |
+| 0 | learning-architect | opus | input.md + input/README.md | artifacts/00-learning-framework.md |
+| 1a | authority-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01a-authority-resources.md |
+| 1b | community-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01b-community-resources.md |
+| 1c | critical-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01c-critical-perspectives.md |
+| 2 | *(Claude Code directly)* | — | 01a/b/c + 00-learning-framework.md + input.md + input/README.md | artifacts/02-study-plan-draft.md |
+| 3 | bias-reviewer | sonnet | 02-study-plan-draft.md + 01a/b/c + 00-learning-framework.md + input.md + input/README.md | artifacts/03-bias-review.md |
+| 4 | curriculum-editor | opus | 02-study-plan-draft.md + 03-bias-review.md + 01a/b/c + 00-learning-framework.md + input.md + input/README.md | output/weekly-study-plan.md + output/resource-index.md + output/self-assessment.md |
+
+All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
 
 ---
 
@@ -1709,6 +1842,7 @@ Maintain `artifacts/00-pipeline-log.md` throughout. Record:
 6. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
    and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
 7. The final output goes to `output/`, not `artifacts/` — the `output/` directory is the deliverable.
+8. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
 """
 files['agents/learning-architect/CLAUDE.md'] = r"""# Learning Architect
 
@@ -2178,6 +2312,29 @@ PYEOF
         mkdir -p agents/literature-analyst
         mkdir -p agents/design-interpreter
         mkdir -p artifacts diagrams/src
+        mkdir -p input/pdf input/web input/repo
+
+        cat > input/README.md << 'INPUTEOF'
+# Input Materials Manifest
+
+Raw source materials organized by type. Agents update this file as they discover and save new materials.
+
+## PDF (`input/pdf/`)
+| File | Source | Added | Notes |
+|------|--------|-------|-------|
+
+## Web (`input/web/`)
+| Title | URL | Fetched | Notes |
+|-------|-----|---------|-------|
+
+## Repo (`input/repo/`)
+| Repository | Branch/Commit | Cloned | Notes |
+|------------|---------------|--------|-------|
+
+> Agents: before starting, check this manifest for available materials.
+> When you discover new PDFs, web pages, or repos during codebase analysis,
+> save them to the corresponding `input/` directory and update this table.
+INPUTEOF
 
         cat > input.md << 'INPUTEOF'
 # Project to analyze
@@ -2197,16 +2354,28 @@ repo_url: [GitHub/GitLab URL or local path to the repository]
 
 # Language preference (optional)
 [Default: English for artifacts. Specify if you want Chinese output for any section.]
+
+# Source materials (input/)
+Place raw materials in the `input/` directory, organized by type:
+- `input/pdf/` — PDF papers, reports, documentation
+- `input/web/` — web page snapshots (Markdown format)
+- `input/repo/` — git repository clones or references
+
+See `input/README.md` for the full manifest. Agents will discover,
+save, and catalog materials here throughout the pipeline.
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-overview.md
-        : > artifacts/01-architecture.md
-        : > artifacts/01-module-analysis.md
-        : > artifacts/01-literature-review.md
-        : > artifacts/02-design-decisions.md
-        : > artifacts/03-final-report.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Project Surveyor\n\n## Pipeline steps\n- **Step 0**: Project Surveyor — repo overview and scope confirmation\n- **Step 1**: 3× parallel agents (Architecture Mapper, Module Deep-Diver, Literature & Context Analyst)\n- **Step 2**: Design Interpreter — design decisions, trade-offs, evolution\n- **Step 3**: Synthesis — final onboarding report with diagram specs\n\n## How to run\nOpen Claude Code in this folder and say: `Read CLAUDE.md and start the pipeline`\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-overview.md \
+            artifacts/01-architecture.md \
+            artifacts/01-module-analysis.md \
+            artifacts/01-literature-review.md \
+            artifacts/02-design-decisions.md \
+            artifacts/03-final-report.md
+        write_resume_file \
+            "Step 0 — Project Surveyor" \
+            "## Pipeline steps\n- **Step 0**: Project Surveyor — repo overview and scope confirmation\n- **Step 1**: 3× parallel agents (Architecture Mapper, Module Deep-Diver, Literature & Context Analyst)\n- **Step 2**: Design Interpreter — design decisions, trade-offs, evolution\n- **Step 3**: Synthesis — final onboarding report with diagram specs\n\n## How to run\nOpen Claude Code in this folder and say: \`Read CLAUDE.md and start the pipeline\`"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -2253,6 +2422,8 @@ Step 3: Synthesis (Claude Code writes directly) → artifacts/03-final-report.md
    - Check the Further Reading (Section 8) for deep dives"
 ```
 
+**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+
 ---
 
 ## Model confirmation
@@ -2286,12 +2457,14 @@ Use the confirmed models when launching every agent below.
 
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| 0 | project-surveyor | opus | input.md | artifacts/00-overview.md |
-| 1a | architecture-mapper | opus | input.md + 00-overview.md | artifacts/01-architecture.md |
-| 1b | module-deepdiver | sonnet | input.md + 00-overview.md | artifacts/01-module-analysis.md |
-| 1c | literature-analyst | sonnet | input.md + 00-overview.md | artifacts/01-literature-review.md |
-| 2 | design-interpreter | opus | 01-architecture + 01-module-analysis + 01-literature-review + 00-overview | artifacts/02-design-decisions.md |
-| 3 | *(Claude Code directly)* | — | all prior artifacts + input.md | artifacts/03-final-report.md |
+| 0 | project-surveyor | opus | input.md + input/README.md | artifacts/00-overview.md |
+| 1a | architecture-mapper | opus | input.md + input/README.md + 00-overview.md | artifacts/01-architecture.md |
+| 1b | module-deepdiver | sonnet | input.md + input/README.md + 00-overview.md | artifacts/01-module-analysis.md |
+| 1c | literature-analyst | sonnet | input.md + input/README.md + 00-overview.md | artifacts/01-literature-review.md |
+| 2 | design-interpreter | opus | 01-architecture + 01-module-analysis + 01-literature-review + 00-overview + input/README.md | artifacts/02-design-decisions.md |
+| 3 | *(Claude Code directly)* | — | all prior artifacts + input.md + input/README.md | artifacts/03-final-report.md |
+
+All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
 
 ---
 
@@ -2458,6 +2631,7 @@ Maintain `artifacts/00-pipeline-log.md` throughout. Record:
 8. Never modify existing artifacts from completed steps without telling the user first.
 9. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
    and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
+10. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
 """
 
 files['agents/project-surveyor/CLAUDE.md'] = """# Project Surveyor
@@ -3132,6 +3306,29 @@ PYEOF
         mkdir -p agents/tech-analyst agents/devils-advocate agents/report-writer
         mkdir -p artifacts/versions docs memory papers
         mkdir -p diagrams/src artifacts/slide-screenshots
+        mkdir -p input/pdf input/web input/repo
+
+        cat > input/README.md << 'INPUTEOF'
+# Input Materials Manifest
+
+Raw source materials organized by type. Agents update this file as they discover and save new materials.
+
+## PDF (`input/pdf/`)
+| File | Source | Added | Notes |
+|------|--------|-------|-------|
+
+## Web (`input/web/`)
+| Title | URL | Fetched | Notes |
+|-------|-----|---------|-------|
+
+## Repo (`input/repo/`)
+| Repository | Branch/Commit | Cloned | Notes |
+|------------|---------------|--------|-------|
+
+> Agents: before starting, check this manifest for available materials.
+> When you discover new PDFs, web pages, or repos during tech assessment,
+> save them to the corresponding `input/` directory and update this table.
+INPUTEOF
 
         cat > input.md << 'INPUTEOF'
 # 技术调研对象
@@ -3155,24 +3352,34 @@ style: [exact skill name or keyword, or leave blank for defaults]
 
 # 调研要求
 [Depth, audience, language, citation style, trend time-horizon, etc.]
+
+# Source materials (input/)
+Place raw materials in the `input/` directory, organized by type:
+- `input/pdf/` — PDF papers, reports, documentation
+- `input/web/` — web page snapshots (Markdown format)
+- `input/repo/` — git repository clones or references
+
+See `input/README.md` for the full manifest. Agents will discover,
+save, and catalog materials here throughout the pipeline.
 INPUTEOF
 
-        echo "# Pipeline log" > artifacts/00-pipeline-log.md
-        : > artifacts/00-question-map.md
-        : > artifacts/01a-research-leadership.md
-        : > artifacts/01b-research-competitive.md
-        : > artifacts/01c-research-trend.md
-        : > artifacts/01d-research-challenges.md
-        : > artifacts/01e-paper-analysis.md
-        : > artifacts/01f-repo-analysis.md
-        : > artifacts/01-research.md
-        : > artifacts/02-analysis.md
-        : > artifacts/02a-challenges.md
-        : > artifacts/02-analysis-final.md
-        : > artifacts/03-report.md
-        : > artifacts/04-narrative.md
-        : > artifacts/04-diagram-specs.md
-        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Tech Question Architect\n\n## Phases\n- **Claude Code** (Steps 0-6): question design, 4-lens research, analysis, final technical report\n- Run with: Read CLAUDE.md and start the pipeline\n- Final deliverable: artifacts/03-report.md (technical assessment report — no PPT)\n' > CLAUDE-RESUME.md
+        init_pipeline_log
+        init_empty_artifacts \
+            artifacts/00-question-map.md \
+            artifacts/01a-research-leadership.md \
+            artifacts/01b-research-competitive.md \
+            artifacts/01c-research-trend.md \
+            artifacts/01d-research-challenges.md \
+            artifacts/01e-paper-analysis.md \
+            artifacts/01f-repo-analysis.md \
+            artifacts/01-research.md \
+            artifacts/02-analysis.md \
+            artifacts/02a-challenges.md \
+            artifacts/02-analysis-final.md \
+            artifacts/03-report.md
+        write_resume_file \
+            "Step 0 — Tech Question Architect" \
+            "## Phases\n- **Claude Code** (Steps 0-6): question design, 4-lens research, analysis, final technical report\n- Run with: Read CLAUDE.md and start the pipeline\n- Final deliverable: artifacts/03-report.md (technical assessment report — no PPT)"
 
         # Write all files via Python to avoid heredoc escaping issues
         python3 << 'PYEOF'
@@ -3231,6 +3438,8 @@ Step 6: Report Writer (Agent subagent, Opus) → artifacts/03-report.md
 Step 7: Output selection — Markdown (always) / PDF (HTML→PDF) / PPTX (Narrative Architect → Cowork)
 ```
 
+**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+
 ---
 
 ## Model confirmation
@@ -3270,19 +3479,21 @@ Use the confirmed models when launching every agent below.
 
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
-| 0 | tech-question-architect | opus | input.md | artifacts/00-question-map.md |
-| 1a | researcher-leadership | sonnet | input.md + 00-question-map.md | artifacts/01a-research-leadership.md |
-| 1b | researcher-competitive | sonnet | input.md + 00-question-map.md | artifacts/01b-research-competitive.md |
-| 1c | researcher-trend | sonnet | input.md + 00-question-map.md | artifacts/01c-research-trend.md |
-| 1d | researcher-challenges | sonnet | input.md + 00-question-map.md | artifacts/01d-research-challenges.md |
-| 2 | *(Claude Code directly)* | — | 01a/b/c/d + input.md + 00-question-map.md | artifacts/01-research.md |
-| 2.5 | paper-analyst (optional) | sonnet | user-supplied paper list + 01-research.md | artifacts/01e-paper-analysis.md + papers/<id>-zh.md |
-| 2.6 | repo-analyst (optional) | sonnet | repo URL + 01-research.md | artifacts/01f-repo-analysis.md |
-| 3 | tech-analyst (first pass) | opus | 01-research.md + input.md | artifacts/02-analysis.md |
-| 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md | artifacts/02a-challenges.md |
-| 5 | tech-analyst (revision) | opus | 02a-challenges.md + 02-analysis.md | artifacts/02-analysis-final.md |
-| 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md | artifacts/03-report.md |
-| 7 | narrative-architect (PPTX only) | sonnet | 03-report.md + input.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
+| 0 | tech-question-architect | opus | input.md + input/README.md | artifacts/00-question-map.md |
+| 1a | researcher-leadership | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01a-research-leadership.md |
+| 1b | researcher-competitive | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01b-research-competitive.md |
+| 1c | researcher-trend | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01c-research-trend.md |
+| 1d | researcher-challenges | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01d-research-challenges.md |
+| 2 | *(Claude Code directly)* | — | 01a/b/c/d + input.md + input/README.md + 00-question-map.md | artifacts/01-research.md |
+| 2.5 | paper-analyst (optional) | sonnet | user-supplied paper list + 01-research.md + input/README.md | artifacts/01e-paper-analysis.md + papers/<id>-zh.md |
+| 2.6 | repo-analyst (optional) | sonnet | repo URL + 01-research.md + input/README.md | artifacts/01f-repo-analysis.md |
+| 3 | tech-analyst (first pass) | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
+| 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md + input/README.md | artifacts/02a-challenges.md |
+| 5 | tech-analyst (revision) | opus | 02a-challenges.md + 02-analysis.md + input/README.md | artifacts/02-analysis-final.md |
+| 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md + input/README.md | artifacts/03-report.md |
+| 7 | narrative-architect (PPTX only) | sonnet | 03-report.md + input.md + input/README.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
+
+All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
 
 ---
 
@@ -3538,6 +3749,7 @@ Maintain `artifacts/00-pipeline-log.md` throughout. Record each step as it compl
 6. Steps 2.5 (Paper Deep-Dive) and 2.6 (Repo Deep-Dive) run ONLY if the user opts in at the Step 2 stop. Never launch the paper-analyst or repo-analyst on your own initiative. Only offer the repo deep-dive when the technology actually has a code repo.
 7. Never modify existing artifacts from completed steps without telling the user first.
 8. To resume a partial run, read `artifacts/00-pipeline-log.md` and `CLAUDE-RESUME.md` to determine state, then continue.
+9. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
 """
 
 files['agents/tech-question-architect/CLAUDE.md'] = """# Tech Question Architect
