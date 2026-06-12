@@ -1,7 +1,7 @@
 # Team Original
 
 Multi-agent team pipeline scaffolds for bootstrapping AI-assisted
-workflows. One script, three pipelines — each generates a full directory
+workflows. One script, five pipelines — each generates a full directory
 of agent instructions, artifact templates, and orchestration guides
 tailored to a different goal.
 
@@ -13,6 +13,7 @@ tailored to a different goal.
 | `./init-pipeline.sh software` | Software development pipeline |
 | `./init-pipeline.sh study` | Learning guide builder |
 | `./init-pipeline.sh coding` | Open source codebase deep analysis |
+| `./init-pipeline.sh tech` | Technology assessment research |
 
 ### research
 
@@ -77,6 +78,28 @@ Combines code-level analysis with academic paper research, design document
 review, and competitive landscape mapping to help you rapidly understand
 any open source project.
 
+### tech
+
+```text
+Step 0: Tech Question Architect  →  Research framework design
+           ↓
+Step 1: 4× Parallel Researchers  (technical · market · risk · architectural)
+           ↓
+Step 2: Synthesis + Knowledge Gap Map
+           ↓
+Step 3: Analyst (first pass)
+           ↓
+Step 4: Devil's Advocate + Completeness Audit
+           ↓
+Step 5: Analyst (revision)
+           ↓
+Step 6: Report Writer  →  artifacts/03-report.md
+```
+
+Technology assessment pipeline focused on producing a technical report
+(Markdown/PDF) rather than a PPT deck. Four research lenses cover
+technical depth, market landscape, risk analysis, and architectural fit.
+
 ## Quick Start
 
 ```bash
@@ -102,6 +125,7 @@ any open source project.
 ├── .github/workflows/ci.yml  # CI: shellcheck + markdownlint
 ├── CLAUDE.md                 # AI assistant guide
 ├── README.md
+├── CHANGELOG.md              # Version history
 └── LICENSE
 ```
 
@@ -113,6 +137,7 @@ After running `init-pipeline.sh`, the generated project will contain:
 ├── CLAUDE-RESUME.md          # Resume point if interrupted
 ├── COWORK.md                 # Cowork build guide (research)
 ├── input.md                  # Your project brief
+├── input/                    # Source materials (pdf/ web/ repo/)
 ├── agents/                   # Agent instruction files
 ├── artifacts/                # Intermediate and final outputs
 ├── output/                   # Final deliverables (study)
