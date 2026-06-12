@@ -4,6 +4,36 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-06-12] — Output Type + 4 Presentation Styles
+
+**Commit**: `310ba58`
+
+### Added (Output Types)
+
+- `output_type` field to research and tech pipeline `input.md` templates
+- 4 types: report (汇报), decision (决策), learning (学习总结), sharing (分享)
+- Report Writer agents: 4-type report structure switch with `important-if` blocks
+- Orchestrator records `output_type` in pipeline log at model confirmation
+- PPT/PDF available for all types
+
+---
+
+## [2026-06-12] — Orchestrator Optimization with important-if
+
+**Commit**: `3c8c022`
+
+### Changed (Orchestrator Optimization)
+
+- Applied `improve-claude-md` skill principles to all 5 orchestrators
+- Session startup stays bare, steps wrapped in `<important if>` blocks
+- Model confirmation + PDF/PPTX recipes wrapped as conditional blocks
+- Research: 522→230 lines (-56%), Study: 264→124 (-53%)
+- Coding: 266→123 (-54%), Tech: 379→158 (-58%)
+- `init-pipeline.sh`: 4398→3661 lines (-737, -17%)
+- 41 `<important if>` blocks across all pipelines
+
+---
+
 ## [2026-06-12] — Session Startup + Iterative Research
 
 **Commit**: `94959f1`
