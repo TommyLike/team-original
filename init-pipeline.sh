@@ -134,129 +134,37 @@ INPUTEOF
 import os
 files = {}
 files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+## Session startup (ALWAYS run first)
 
-When your session starts in this project directory:
+When your session starts:
 
-1. Read `CLAUDE-RESUME.md` to check current status.
-2. Check `input/README.md` — look at the "New in this iteration" table.
-3. Act on status:
-   - **Complete / DONE**:
-     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
-     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
-   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
-   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+1. Read `CLAUDE-RESUME.md` for current status.
+2. Check `input/README.md` for new materials.
+3. Act: Complete→offer supplement/refresh, In-progress→offer resume, Fresh→wait.
 
 ---
 
-# Research Pipeline — Claude Code Orchestration Guide
+# Research Pipeline Orchestrator
 
-**You are Claude Code.** This file is your orchestration guide for running the research phase (Steps -2–6) of the research-to-PPT pipeline.
-When the user asks you to run the pipeline (or resume it), follow these steps in order.
+Multi-agent research pipeline (10 agents, 7 steps). Generates research report + optional PDF/PPTX.
 
-**Before starting any step**, confirm model assignments with the user (see "Model confirmation" below).
+**Before starting**: confirm model assignments with user (see Model confirmation).
 
 ---
 
 ## Pipeline overview
 
 ```
-Step -2: Value Assessor (Agent subagent, Opus) → artifacts/00-value-assessment.md
-  → STOP: show value/ROI analysis, alternatives, go/no-go recommendation.
-    User decides whether this research is worth pursuing BEFORE any work begins.
-    (For well-defined, pre-approved topics, can skip with user consent.)
-        ↓
-Step -1: Brainstorming Agent (Agent subagent, Opus) → artifacts/00-brainstorm-output.md
-  → STOP: show problem reframes, research directions, hidden assumptions.
-    User confirms direction before research begins.
-    (Skip if user says the topic is already well-defined.)
-        ↓
-Step 0: Question Architect (Agent subagent, Opus) → artifacts/00-question-map.md
-  → STOP: show question map + blind-spot checklist, wait for user confirmation/additions
-        ↓
-Step 1: Multi-Lens Research (3 parallel Agent subagents, Sonnet)
-  ├── Technical Researcher  → artifacts/01a-research-technical.md
-  ├── Strategic Researcher  → artifacts/01b-research-strategic.md
-  └── Contrarian Researcher → artifacts/01c-research-contrarian.md
-        ↓
-Step 2: Synthesis (Claude Code writes directly) → artifacts/01-research.md
-  → STOP: show synthesis summary + Knowledge Gap Map, wait for user confirmation
-        ↓
-Step 3: Analysis — first pass (Agent subagent, Opus) → artifacts/02-analysis.md
-        ↓
-Step 4: Devil\'s Advocate (Agent subagent, Sonnet) → artifacts/02a-challenges.md
-        ↓
-Step 5: Analysis Revision (Agent subagent, Opus) → artifacts/02-analysis-final.md
-  → STOP: summarize findings + expert knowledge injection window, wait for user go-ahead
-        ↓
-Step 6: Report Writer (Opus) → artifacts/03-report.md
-        ↓
-Step 7: Narrative Architect (Agent subagent, Sonnet)
-  → artifacts/04-narrative.md
-  → artifacts/04-diagram-specs.md        ← ADD: generate this alongside narrative
-
-  The Narrative Architect must, after writing the narrative, produce a second
-  file `artifacts/04-diagram-specs.md` that lists every diagram the deck needs,
-  following the Diagram Spec Format (see .claude/commands/diagram.md).
-  One spec block per diagram. Include: Type, Tool (auto-select if unsure),
-  content fields, and Output path as diagrams/slide<NN>-<slug>.png.
-
-  → STOP: show narrative summary + list of diagrams specced. Wait for user
-    confirmation or spec edits before proceeding.
-        ↓
-→ DONE: Research phase complete. Tell the user:
-
-  "You have two outputs ready:
-    📄 artifacts/04-narrative.md  — full narrative for the deck
-    📋 artifacts/04-diagram-specs.md — diagram specs (review/edit if needed)
-
-  Next steps:
-
-  Option A — Generate diagrams first (recommended if deck has 3+ diagrams):
-    1. Stay in Claude Code. Run: /diagram
-    2. Diagrams will appear in diagrams/*.png
-    3. Switch to Cowork: \'Read COWORK.md and build the deck.
-       Diagrams are in diagrams/ — insert per slide number in 04-diagram-specs.md\'
-
-  Option B — Skip diagrams, build deck now:
-    Switch to Cowork: \'Read COWORK.md and build the deck.
-    Note: diagrams will need to be added manually or run /diagram separately.\'
-  "
+Step -2: Value Assessor → STOP: GO/NO-GO → -1: Brainstorming → STOP: confirm → 
+Step 0: Question Architect → STOP: confirm → Step 1: 3× parallel researchers → 
+Step 2: Synthesis + Gap Map → STOP: fill gaps → Step 3: Analyst → 
+Step 4: Devil's Advocate → Step 5: Analysis revision → STOP: expert input → 
+Step 6: Report Writer → Step 7: Narrative Architect → STOP → OUTPUT
 ```
 
-**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+Output formats: Markdown (always) / PDF / PPTX. User selects at Step 7.
 
----
-
-## Model confirmation
-
-**Do this before Step -2.** Show the user the default model for each agent and ask whether they want to change any:
-
-| Step | Agent | Default model |
-|---|---|---|
-| -2 | Value Assessor | opus |
-| -1 | Brainstorming Agent | opus |
-| 0 | Question Architect | opus |
-| 1a–1c | Researchers (×3, parallel) | sonnet |
-| 3 | Analyst — first pass | opus |
-| 4 | Devil\'s Advocate | sonnet |
-| 5 | Analyst — revision | opus |
-| 6 | Report Writer | opus |
-| 7 | Narrative Architect | sonnet |
-
-Ask: *"These are the default models. Reply \'confirm\' to use them, or tell me any changes (e.g. \'analyst: sonnet\' to reduce cost)."*
-
-Wait for the user\'s reply before proceeding. Record the confirmed models in `artifacts/00-pipeline-log.md`:
-```
-model-value-assessor: <confirmed>
-model-brainstorming: <confirmed>
-model-question-architect: <confirmed>
-model-researcher: <confirmed>
-model-analyst: <confirmed>
-model-devils-advocate: <confirmed>
-model-narrative-architect: <confirmed>
-```
-
-Use the confirmed models when launching every agent below.
+**Source materials**: `input/README.md` — check before each step.
 
 ---
 
@@ -271,392 +179,191 @@ Use the confirmed models when launching every agent below.
 | 1b | researcher-strategic | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01b-research-strategic.md |
 | 1c | researcher-contrarian | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01c-research-contrarian.md |
 | 2 | *(Claude Code directly)* | — | 01a/b/c + input.md + input/README.md + 00-question-map.md | artifacts/01-research.md |
-| 3 | analyst (first pass) | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
+| 3 | analyst | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
 | 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md + input/README.md | artifacts/02a-challenges.md |
 | 5 | analyst (revision) | opus | 02a-challenges.md + 02-analysis.md + input/README.md | artifacts/02-analysis-final.md |
 | 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md + input/README.md | artifacts/03-report.md |
 | 7 | narrative-architect | sonnet | 03-report.md + input.md + input/README.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
 
-All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
-
 ---
 
-## How Claude Code runs agents
+## How to run agents
 
-Use the **Task tool** (or Agent subagent) to spawn each subagent. The subagent reads its instruction file from
-`agents/<name>/CLAUDE.md`, reads its inputs, writes its output, and returns.
-
-Always include the **absolute project path** and the **confirmed language settings** in every agent prompt.
-
-Template prompt:
+Use **Agent** tool subagents. Include absolute project path in every prompt:
 ```
 Read agents/<name>/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-Artifact language: <confirmed, e.g. English>
-Slide language: <confirmed, e.g. Chinese>
-[any additional context]
+Project root: <absolute path>
 ```
 
-**Step 1 is the only parallel step**: launch all three researcher subagents in a single message
-(three Task/Agent tool calls at once).
-
-All other steps are sequential: verify the previous artifact exists and is non-empty before launching the next agent.
+**Step 1 is the only parallel step** — launch all 3 researchers in one message. All other steps are sequential: verify previous artifact exists before proceeding.
 
 ---
 
-## Detailed steps
+<important if="you are starting the pipeline for the first time or the user asks to change models">
 
-### Step -2 — Value Assessment (Is This Worth Doing?)
+## Model confirmation
 
-Agent: `value-assessor`, model: opus.
-Input: `input.md`.
-Output: `artifacts/00-value-assessment.md`.
+Show user defaults, ask to confirm or change:
 
-**Why this step exists**: The pipeline is designed to answer "how" questions — how to research, how to analyze, how to build. But before investing research effort, you need to answer "whether" and "why". This step prevents wasted effort on low-value research directions.
-
-**Before launching this agent**, read `input.md` and decide whether to offer a skip:
-
-If the research topic is **already approved / pre-validated** (e.g. part of an existing roadmap item with clear budget), say:
-> "Your topic appears to already have organizational backing. The Value Assessment phase (Step -2) can still help clarify expected impact and surface expert gaps, but takes ~60-90s. Would you like to run it, or skip to Step -1 (Brainstorming)?"
-
-If the topic is **new / exploratory / uncertain**, say:
-> "Before we invest in research, let me run the Value Assessor first to evaluate whether this is worth pursuing — what's the expected impact, what are the alternatives, and whether we have the right expert input to proceed."
-
-Then launch the agent:
-```
-Read agents/value-assessor/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-```
-
-The agent will assess value through five dimensions: (1) problem validation, (2) impact hypothesis, (3) alternatives analysis, (4) expert calibration, and (5) rough effort sizing. It writes `artifacts/00-value-assessment.md` and prints a STOP block.
-
-**→ STOP**: After it completes, show the user:
-1. Value score and go/no-go recommendation
-2. Key uncertainties (things that could flip the assessment)
-3. Expert knowledge gaps (who needs to weigh in)
-4. Alternatives that should be considered
-
-Ask:
-- "Does this assessment match your intuition about the value of this research?"
-- "Are there experts we should consult before proceeding?"
-- "Should we proceed, pivot to an alternative, or reconsider?"
-
-If the user provides expert input or corrections, update `artifacts/00-value-assessment.md` accordingly. If the user says "go/proceed", move to Step -1.
-
-**Skip path**: If the user chose to skip, create a minimal `artifacts/00-value-assessment.md`:
-```
-# Value Assessment skipped
-User confirmed the research topic is pre-approved and opted to skip value assessment.
-```
-
-### Step -1 — Brainstorming (Problem Framing)
-
-Agent: `brainstorming`, model: opus.
-Input: `input.md` + `artifacts/00-value-assessment.md`.
-Output: `artifacts/00-brainstorm-output.md`.
-
-**Before launching this agent**, read `input.md` and decide whether to offer a skip:
-
-If the research topic is **already well-defined** (specific, narrow, with clear scope — e.g. "Research the governance model of OurBMC"), say:
-> "Your topic looks well-defined. The brainstorming phase (Step -1) is designed for open-ended problems and can still help validate your framing or surface blind spots. Would you like to run it, or skip to Step 0?"
-
-If the topic is **open-ended or fuzzy**, say:
-> "Your topic is open-ended. I\'ll run the Brainstorming agent first to explore the problem space and generate concrete research directions."
-
-Then launch the agent:
-```
-Read agents/brainstorming/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-```
-
-The agent will self-deliberate using a structured brainstorming methodology (problem diagnosis, multi-perspective reframing, assumption challenge, cross-domain analogy, research direction generation). It writes `artifacts/00-brainstorm-output.md` and prints a STOP block.
-
-**→ STOP**: After it completes, show the user:
-1. Problem diagnosis and core tension
-2. Top research directions (prioritized)
-3. Hidden assumptions surfaced
-4. Cross-domain analogies found
-
-Ask:
-- "Do these research directions capture what you want to explore?"
-- "Are there angles or ideas you want to add or remove?"
-- "Should any direction be elevated/deprioritized?"
-
-If the user provides additions or corrections, update `artifacts/00-brainstorm-output.md` accordingly. If the user says "go", proceed to Step 0.
-
-**Skip path**: If the user chose to skip brainstorming, create a minimal `artifacts/00-brainstorm-output.md`:
-```
-# Brainstorming skipped
-User confirmed the research topic is well-defined and opted to skip brainstorming.
-```
-Then proceed directly to Step 0.
-
-### Step 0 — Question Architect
-
-Agent: `question-architect`, model: opus.
-Input: `input.md` + `artifacts/00-brainstorm-output.md`.
-Output: `artifacts/00-question-map.md`.
-
-The agent will print a formatted STOP block directly in its output. After it completes, show that block to the user.
-
-**→ STOP**: The agent\'s output will contain a checklist of commonly-missed research dimensions and a list of items flagged as `[Expert input needed]`. Present them to the user and ask:
-- Are there corrections or additions to the question map?
-- Do they have expert knowledge to pre-fill any `[Expert input needed]` items now?
-
-If the user provides expert knowledge, write it into `artifacts/00-expert-input.md` (create if it doesn\'t exist). Researchers will read this file in Step 1.
-
-If the user replies "go" with no additions, proceed to Step 1. If the user provides additions, update `artifacts/00-question-map.md` with any structural changes the user specifies, then proceed.
-
-### Step 1 — Multi-Lens Research (parallel)
-
-Launch all three researchers simultaneously. Pass the question map to each: they should use `artifacts/00-question-map.md` to guide their specific sub-questions, especially items flagged as `[Expert input needed]` which they should attempt but mark as unresolved if public evidence is insufficient.
-
-If `artifacts/00-expert-input.md` exists, include it in the agent prompt so researchers can reference it.
-
-Quality gate after all three complete:
-- Each artifact must contain specific numbers, named sources, or URLs.
-- Each artifact must address at least the sub-questions in `00-question-map.md` that fall within its lens.
-- If any artifact is vague or thin, rerun that researcher with a more focused prompt listing the gaps.
-
-### Step 2 — Synthesis (Claude Code writes directly)
-
-Read the three research artifacts plus `input.md` and `00-question-map.md`. Write `artifacts/01-research.md` with this structure:
-1. Executive summary (3–5 sentences)
-2. Key findings (by theme, merging all three lenses)
-3. Data and evidence (statistics, quotes, with sources)
-4. Comparable cases and industry practices
-5. Conflicts and open questions (where researchers disagreed or found tension)
-6. Source list
-7. **Knowledge Gap Map** (new — see below)
-
-**Section 7 — Knowledge Gap Map** format:
-
-| Question | Coverage | Notes |
+| Step | Agent | Default |
 |---|---|---|
-| [sub-question from 00-question-map.md] | Public ✓ / Sparse ~ / Not found ✗ / Expert needed ★ | what was found or why it\'s missing |
+| -2 | Value Assessor | opus |
+| -1 | Brainstorming | opus |
+| 0 | Question Architect | opus |
+| 1 | 3× Researchers (parallel) | sonnet |
+| 3 | Analyst (first pass) | opus |
+| 4 | Devil's Advocate | sonnet |
+| 5 | Analyst (revision) | opus |
+| 6 | Report Writer | opus |
+| 7 | Narrative Architect | sonnet |
 
-Rules for the gap map:
-- Every sub-question from `00-question-map.md` must appear in the table.
-- Be honest about sparse or missing coverage — do not paper over gaps with vague findings.
-- Mark items the user pre-filled via `00-expert-input.md` as `Expert input ✓`.
+Record confirmed models in `artifacts/00-pipeline-log.md`. Wait for reply before Step -2.
+</important>
 
-Rules for synthesis:
-- Do NOT drop contrarian findings.
-- Where researchers disagree, present BOTH sides.
-- De-duplicate but keep the most specific version.
-- Preserve all numbers, named sources, and URLs.
+---
 
-**→ STOP**: Show the user:
-1. A concise synthesis summary (headline findings, key conflicts, notable data points)
-2. The Knowledge Gap Map — specifically call out any items marked `★ Expert needed` or `✗ Not found`
+<important if="you are running Step -2 (Value Assessment)">
 
-Ask: "Do you have expert knowledge to fill any of these gaps before analysis begins? If yes, share it now — I\'ll add it to `01-research.md` directly. Otherwise reply \'go\' to proceed to analysis."
+### Step -2: Value Assessor
 
-If the user provides gap-filling information, append it to the relevant sections in `01-research.md` (clearly marked as `[Expert input — added at Step 2 review]`) and update the gap map accordingly. Then wait for final "go" before proceeding to Step 3.
+Agent: `value-assessor` (opus). Input: `input.md`. Output: `artifacts/00-value-assessment.md`.
 
-### Step 3 — Analysis (first pass)
+**Skip option**: if topic is pre-approved, offer to skip ("this still helps surface expert gaps — run or skip?"). If skipped, create `artifacts/00-value-assessment.md` with `# Value Assessment skipped`.
 
-Agent: `analyst`, model: opus.
-Input: `artifacts/01-research.md` + `input.md`.
-Output: `artifacts/02-analysis.md`.
+Launch: `Read agents/value-assessor/CLAUDE.md. Project root: <path>`
 
-### Step 4 — Devil\'s Advocate
+**→ STOP** after completion. Show: recommendation (GO/CONDITIONAL/PIVOT/NO-GO), expert gaps, alternatives. Ask: "Proceed to brainstorming?"
+</important>
 
-Agent: `devils-advocate`, model: sonnet.
-Input: `artifacts/02-analysis.md` + `artifacts/01-research.md` + `input.md`.
-Output: `artifacts/02a-challenges.md`.
+---
 
-### Step 5 — Analysis Revision
+<important if="you are running Step -1 (Brainstorming)">
 
-Agent: `analyst` (revision pass), model: opus.
-Input: `artifacts/02a-challenges.md` + `artifacts/02-analysis.md`.
-Output: `artifacts/02-analysis-final.md`.
+### Step -1: Brainstorming
 
-Quality gate: Every challenge in `02a-challenges.md` must be addressed (accepted or rebutted).
-If any are ignored, send the analyst back.
+Agent: `brainstorming` (opus). Input: `input.md` + `artifacts/00-value-assessment.md`. Output: `artifacts/00-brainstorm-output.md`.
 
-**→ STOP**: Show the user:
-1. Summary of the final analysis — top recommendations, how many challenges were accepted vs. rebutted, key risks
-2. **Expert knowledge injection window** — show the following block:
+**Skip option**: if topic is well-defined, offer to skip. If skipped, create `artifacts/00-brainstorm-output.md` with `# Brainstorming skipped`.
 
-```
-─────────────────────────────────────────
-Expert knowledge injection (optional)
-─────────────────────────────────────────
-Before the narrative step, this is the last cheap point to add domain knowledge.
+Launch: `Read agents/brainstorming/CLAUDE.md. Project root: <path>`
 
-Remaining open gaps from the Knowledge Gap Map:
-[list all items still marked ★ or ✗ from artifacts/01-research.md Section 7]
+**→ STOP**. Show: problem diagnosis, top directions, assumptions. Ask: "Proceed to question design?"
+</important>
 
-Common questions experts answer that LLMs typically miss for this research type:
-  • Decision authority: Who actually decides [key technology choices in this domain]?
-  • Middle-layer players: Are there integrator/IBV/broker types not yet in the analysis?
-  • Application-layer customization: Do major customers have unpublished requirements?
-  • Commercial value chain: How does [technology X] affect upstream/downstream business?
-  • Governance reality: In the alliances/consortiums mentioned, who drives the real agenda?
+---
 
-If you have talked to domain experts since Step 2, share any new information now.
-I will update artifacts/02-analysis-final.md before proceeding to narrative.
+<important if="you are running Step 0 (Question Architect)">
 
-Reply "go" to proceed, or share expert input.
-─────────────────────────────────────────
-```
+### Step 0: Question Architect
 
-If the user provides expert input, append it to `artifacts/02-analysis-final.md` in a new section `## Expert Input (added at Step 5 review)` and briefly note what was changed. Then wait for "go".
+Agent: `question-architect` (opus). Input: `input.md` + `artifacts/00-brainstorm-output.md`. Output: `artifacts/00-question-map.md`.
 
-### Step 6 — Report Writer (canonical report)
+**→ STOP**. Show question map + [Expert input needed] items. If user provides expert input, save to `artifacts/00-expert-input.md`. Ask: "Proceed to research?"
+</important>
 
-Agent: `report-writer`, model: opus.
-Input: `artifacts/02-analysis-final.md` + `artifacts/01-research.md` + `input.md`.
-Output: `artifacts/03-report.md` — the canonical complete report (format-agnostic). This is the single source the Step 7 output layer renders into Markdown / PDF / slides.
+---
 
-**→ STOP (Step 7 — Output selection)**: The canonical report `artifacts/03-report.md` is ready. Ask the user which outputs they want (multi-select):
-- **Markdown report** — already produced at `artifacts/03-report.md` (always available).
-- **PDF** — render `03-report.md` via an HTML intermediate to `artifacts/05-report.pdf` (more reliable for CJK + tables + pagination than direct Markdown to PDF).
-- **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`, see the detailed step below), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
+<important if="you are running Step 1 (Multi-Lens Research)">
 
-Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
-- For PPTX: proceed to the Narrative Architect step below, then hand to Cowork.
-- If the user only wants the Markdown report, you are done.
+### Step 1: 3× Parallel Research
 
-#### PDF generation recipe (MUST follow exactly)
+Launch `researcher-technical`, `researcher-strategic`, `researcher-contrarian` (all sonnet) simultaneously. Pass `artifacts/00-question-map.md` + `artifacts/00-expert-input.md` if exists.
 
-**Step 1 — Convert Markdown to styled HTML**
+Quality gate: each artifact must contain specific numbers, named sources, or URLs. Rerun thin artifacts with focused prompts.
+</important>
 
-Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
+---
 
-**Step 2 — CSS (MUST embed these @font-face rules)**
+<important if="you are running Step 2 (Synthesis)">
 
-The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
+### Step 2: Synthesis
 
-Recommended CSS (platform-aware — detect the OS and use the right block):
+Write `artifacts/01-research.md` directly. Structure: executive summary → key findings → data/evidence → comparable cases → conflicts → source list → **Knowledge Gap Map** (table: Question | Coverage | Notes, mark items ★ Expert needed or ✗ Not found).
 
-```css
-/* === macOS CJK fonts (use these on darwin) === */
-@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
-@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
-@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
+**→ STOP**. Show summary + gap map. Ask: "Expert knowledge to fill gaps? Reply 'go' to proceed."
+</important>
 
-/* === Linux CJK fonts (use these on Linux) === */
-/* Install first: apt-get install fonts-noto-cjk */
-@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
-@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
-@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
+---
 
-/* === page setup === */
-@page { size: A4; margin: 2cm 2.2cm; }
-body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
-       line-height: 1.6; color: #1a1a1a; }
-h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
-h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
-h2 { font-size: 14pt; }
-h3 { font-size: 12pt; }
-table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
-th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
-th { background: #f0f0f0; font-weight: bold; }
-pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
-img { max-width: 100%; page-break-inside: avoid; }
-```
+<important if="you are running Steps 3-5 (Analysis)">
 
-**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
+### Steps 3-5: Analysis Loop
 
-Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
+- **Step 3**: `analyst` (opus) → `artifacts/02-analysis.md`
+- **Step 4**: `devils-advocate` (sonnet) → `artifacts/02a-challenges.md`
+- **Step 5**: `analyst` revision (opus) → `artifacts/02-analysis-final.md`. Every challenge in 02a must be addressed.
 
-```bash
-# Option A: Playwright (preferred — handles CJK natively)
-npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
+**→ STOP at Step 5**. Show final recommendations. Offer expert knowledge injection window (last cheap point to add domain input before narrative).
+</important>
 
-# Option B: Chromium headless
-chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
-  --no-pdf-header-footer artifacts/05-report.html
-```
+---
 
-**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
+<important if="you are running Step 6 (Report Writer)">
 
-**Step 4 — Verify the PDF**
+### Step 6: Report Writer
 
-After generation, check the PDF:
-1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
-2. Verify tables have borders and are not split across pages badly.
-3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
+Agent: `report-writer` (opus). Input: `artifacts/02-analysis-final.md` + `artifacts/01-research.md` + `input.md`. Output: `artifacts/03-report.md`.
 
-### Step 7 — Narrative Architect
+**→ STOP**: ask user which output formats (multi-select): Markdown (always), PDF, PPTX. Record in pipeline log as `output-formats:`.
+</important>
 
-Agent: `narrative-architect`, model: sonnet.
-Input: `artifacts/03-report.md` + `input.md`.
-Output: `artifacts/04-narrative.md` + `artifacts/04-diagram-specs.md`.
+---
 
-The Narrative Architect must, after writing the narrative, produce a second
-file `artifacts/04-diagram-specs.md` that lists every diagram the deck needs,
-following the Diagram Spec Format (see .claude/commands/diagram.md).
-One spec block per diagram. Include: Type, Tool (auto-select if unsure),
-content fields, and Output path as diagrams/slide<NN>-<slug>.png.
+<important if="the user asks for PDF output">
 
-**→ STOP**: Show the user the narrative skeleton (`04-narrative.md`) and the list
-of diagrams specced in `04-diagram-specs.md`. Then ask:
+### PDF generation recipe
 
-1. **Language**: What language for intermediate artifacts (research, analysis)?
-   What language for the slides? *(Default: English artifacts, match input.md audience for slides)*
+Convert `03-report.md` → HTML → PDF. **Do NOT use weasyprint** (cannot parse TTC CJK fonts).
 
-2. **PPTX layout**: Do you have a `.pptx` template file to use as the visual base?
-   If yes, provide the path. If no, describe the visual style you want
-   (e.g. "dark tech style", "corporate minimal").
+1. Convert MD to HTML (pandoc: `pandoc 03-report.md -o 05-report.html --standalone`)
+2. Embed `@font-face` CSS with `local('Noto Sans CJK SC')` (Linux) or `local('PingFang SC')` (macOS)
+3. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf` or headless Chromium
+4. Verify: no tofu □ boxes, table borders intact
+</important>
 
-Record answers in `artifacts/00-pipeline-log.md` as:
-```
-artifact-language: <lang>
-slide-language: <lang>
-pptx-template: <path or description>
-```
+---
 
-Wait for the user to confirm the narrative structure and diagram specs.
-The user may edit `04-narrative.md` or `04-diagram-specs.md` directly — this is the cheapest point to fix structural issues.
+<important if="you are running Step 7 (Narrative Architect)">
 
-**→ DONE**: Once confirmed, tell the user:
+### Step 7: Narrative Architect
 
-> "You have two outputs ready:
->   📄 artifacts/04-narrative.md  — full narrative for the deck
->   📋 artifacts/04-diagram-specs.md — diagram specs (review/edit if needed)
->
-> Next steps:
->
-> Option A — Generate diagrams first (recommended if deck has 3+ diagrams):
->   1. Stay in Claude Code. Run: /diagram
->   2. Diagrams will appear in diagrams/*.png
->   3. Switch to Cowork: \'Read COWORK.md and build the deck.
->      Diagrams are in diagrams/ — insert per slide number in 04-diagram-specs.md\'
->
-> Option B — Skip diagrams, build deck now:
->   Switch to Cowork: \'Read COWORK.md and build the deck.
->   Note: diagrams will need to be added manually or run /diagram separately.\'"
+Agent: `narrative-architect` (sonnet). Input: `artifacts/03-report.md` + `input.md`. Output: `artifacts/04-narrative.md` + `artifacts/04-diagram-specs.md`.
+
+**→ STOP**. Confirm narrative + diagram specs. Record artifact/slide language, PPTX template in pipeline log.
+
+**→ DONE**: Tell user about next steps (Option A: `/diagram` → Cowork, Option B: Cowork directly).
+</important>
+
+---
+
+<important if="the user asks for PPTX output">
+
+### PPTX output
+
+Switch to Cowork: `Read COWORK.md and build the deck`. Diagrams: `artifacts/04-diagram-specs.md`. Template: recorded in pipeline log. Output: `artifacts/05-deck.pptx`.
+</important>
 
 ---
 
 ## Pipeline log
 
-Maintain `artifacts/00-pipeline-log.md` throughout. Record:
-- Each step as it completes, with a timestamp
-- Confirmed settings (artifact-language, slide-language, pptx-template)
-- Any user edits or expert input injected during review stops
+Maintain `artifacts/00-pipeline-log.md`: step completion timestamps, confirmed settings, user edits, expert input.
 
 ---
 
+<important if="you are starting, resuming, or proceeding between steps">
+
 ## Rules
 
-1. Always announce which step you are starting and what it will produce.
-2. Never start Step -2 until the user confirms the model assignments.
-3. Never start Step -1 until Step -2 is complete and confirmed (or skipped).
-4. Never start Step 0 until Step -1 is complete and confirmed (or skipped).
-5. Never start Step 1 until the user confirms the question map (Step 0 stop).
-6. Never start Step 3 until the user confirms the synthesis (Step 2 stop).
-7. Never proceed past Step 6 — PPT creation is Cowork\'s responsibility (see COWORK.md).
-8. Verify each artifact exists and is non-empty before starting the next step.
-9. Never modify existing artifacts from completed steps without telling the user first.
-10. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
-   and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
-11. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
-"""
+- Announce each step before starting.
+- Never start a step until previous step's STOP is confirmed (or step is skipped).
+- Verify each artifact exists and non-empty before next step.
+- Parallel only at Step 1; all others sequential.
+- Step 1 quality gate: every artifact must contain numbers/sources/URLs. Rerun if thin.
+- Do not modify completed artifacts without telling user.
+- Resume: read `artifacts/00-pipeline-log.md` + `CLAUDE-RESUME.md`.
+- **Source materials**: check `input/README.md` before each step. Save discoveries to `input/` and update manifest.
+</important>"""
 files['agents/value-assessor/CLAUDE.md'] = """# Value Assessor
 
 You are a strategic value assessment expert. Your job is to evaluate whether a research topic is worth pursuing BEFORE any research effort is invested — answering "should we do this?" not "how should we do this?"
@@ -1270,91 +977,152 @@ import os
 files = {}
 
 files['CLAUDE.md'] = """\
-## Session startup (ALWAYS run first — before any response)
+## Session startup (ALWAYS run first)
 
-When your session starts in this project directory:
-
-1. Read `CLAUDE-RESUME.md` to check current status.
-2. Check `input/README.md` — look at the "New in this iteration" table.
-3. Act on status:
-   - **Complete / DONE**:
-     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
-     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
-   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
-   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+When your session starts:
+1. Read `CLAUDE-RESUME.md` for current status.
+2. Check `input/README.md` for new materials.
+3. Act: Complete->offer supplement/refresh, In-progress->offer resume, Fresh->wait.
 
 ---
 
-# Orchestrator
+# Software Development Pipeline Orchestrator
 
-You are the orchestrator of a multi-agent software development pipeline.
-Your job is to run agents in sequence by reading their CLAUDE.md and invoking them with the correct inputs.
+Multi-agent software pipeline (7 agents). Requirements -> Architecture -> Code -> Test -> Report.
 
-## Pre-flight check (REQUIRED — run once before starting the pipeline)
+---
 
-At the very start, before invoking any agent, show the user a single table of all agents that will run, with your recommended model for each:
+## Agent roster
 
+| Step | Agent | Reads | Writes |
+|---|---|---|---|
+| 1 | requirements | artifacts/00-user-brief.md + input/README.md | artifacts/01-requirements.md |
+| 1b | requirements-qa | 01-requirements.md + 00-user-brief.md + input/README.md | artifacts/01-requirements-qa.md |
+| 2 | architect | 01-requirements-qa.md + input/README.md | artifacts/02-architecture.md |
+| 2b | architect-qa | 02-architecture.md + 01-requirements-qa.md + input/README.md | artifacts/02-architecture-qa.md |
+| 3 | coder | 02-architecture-qa.md + 01-requirements-qa.md + input/README.md | code in artifacts/src/ |
+| 3b | testcase-dev | 01-requirements-qa.md + 02-architecture-qa.md + input/README.md | artifacts/03-test-cases.md |
+| 4 | tester | artifacts/src/ + 03-test-cases.md + input/README.md | artifacts/04-report.md |
+
+**Source materials**: `input/README.md` -- check before each step.
+
+---
+
+## How to run agents
+
+Use **Agent** tool subagents. Include absolute project path:
 ```
-Pipeline model assignments — please confirm or change before we start:
-
-  Step  Agent             Recommended model       Reason
-  ────  ────────────────  ──────────────────────  ──────────────────────────────────
-  1     requirements      claude-sonnet-4-6        structured text analysis
-  1b    requirements-qa   claude-sonnet-4-6        document review
-  2     architect         claude-opus-4-7          complex trade-off reasoning
-  2b    architect-qa      claude-sonnet-4-6        document review
-  3     coder             claude-opus-4-7          multi-file code generation
-  3b    testcase-dev      claude-sonnet-4-6        structured document writing
-  4     tester            claude-sonnet-4-6        test execution and reporting
-
-Confirm, or tell me which steps to change.
-```
-
-Wait for the user to confirm or modify. Then lock in the assignments and proceed with the pipeline — do not ask again per step.
-
-Suggested models:
-- Opus (claude-opus-4-7): architect, coder — complex reasoning and generation
-- Sonnet (claude-sonnet-4-6): all other agents — structured analysis and writing
-- Haiku (claude-haiku-4-5-20251001): not recommended for any agent in this pipeline
-
-## Pipeline order
-1. Run agents/requirements/ → produces artifacts/01-requirements.md
-1b. Run agents/requirements-qa/ → produces artifacts/01-requirements-qa.md
-    - Requirements agent resolves all Critical and Contradiction issues before proceeding
-2. Ask user: "Run architect step?" (optional — designs system architecture before coding)
-   - If yes: Run agents/architect/ → produces artifacts/02-architecture.md
-   2b. Run agents/architect-qa/ → produces artifacts/02-architecture-qa.md
-       - Architect agent resolves all Critical and Contradiction issues before proceeding
-   - If no: Skip to step 3
-3. Run agents/coder/ → produces artifacts/src/
-3b. Run agents/testcase-dev/ → produces artifacts/03-test-cases.md (after coder completes)
-4. Run agents/tester/ → produces artifacts/04-report.md
-
-All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
-
-## Completion notification (REQUIRED — run after the final step)
-
-When the pipeline finishes (after the tester writes artifacts/04-report.md), run this command to send a macOS notification:
-
-```bash
-osascript -e 'display notification "All pipeline steps complete. Check artifacts/04-report.md for results." with title "sw-pipeline" sound name "Glass"'
+Read agents/<name>/CLAUDE.md for your full instructions.
+Project root: <absolute path>
 ```
 
-Then print a summary to the user:
-```
-✓ Pipeline complete
-  Report:    artifacts/04-report.md
-  Verdict:   <PASS or FAIL from the report>
-  Log:       artifacts/00-pipeline-log.md
-```
+Steps are sequential. Verify each artifact exists before next step. QA agents (1b, 2b, 4) check for Critical/Contradiction issues -- fix before proceeding.
+
+---
+
+<important if="you are starting the pipeline for the first time or the user asks to change models">
+
+## Model confirmation
+
+| Step | Agent | Default |
+|---|---|---|
+| 1 | requirements | sonnet |
+| 1b | requirements-qa | sonnet |
+| 2 | architect | opus |
+| 2b | architect-qa | sonnet |
+| 3 | coder | opus |
+| 3b | testcase-dev | sonnet |
+| 4 | tester | sonnet |
+
+Ask: "Architect step optional -- skip or run?" Wait for reply. Record in `artifacts/00-pipeline-log.md`.
+</important>
+
+---
+
+<important if="you are running Step 1 (Requirements)">
+
+### Step 1: Requirements
+
+Agent: `requirements` (sonnet). Input: `artifacts/00-user-brief.md`. Output: `artifacts/01-requirements.md`.
+</important>
+
+---
+
+<important if="you are running Step 1b (Requirements QA)">
+
+### Step 1b: Requirements QA
+
+Agent: `requirements-qa` (sonnet). Input: `artifacts/01-requirements.md`. Output: `artifacts/01-requirements-qa.md`.
+Fix Critical issues before proceeding.
+</important>
+
+---
+
+<important if="you are running Step 2 (Architecture)">
+
+### Step 2: Architecture
+
+Agent: `architect` (opus). Input: `artifacts/01-requirements-qa.md`. Output: `artifacts/02-architecture.md`.
+Skip if user declined architect step.
+</important>
+
+---
+
+<important if="you are running Step 2b (Architecture QA)">
+
+### Step 2b: Architecture QA
+
+Agent: `architect-qa` (sonnet). Input: `artifacts/02-architecture.md`. Output: `artifacts/02-architecture-qa.md`.
+</important>
+
+---
+
+<important if="you are running Step 3 (Coding)">
+
+### Step 3: Coding
+
+Agent: `coder` (opus). Input: `artifacts/02-architecture-qa.md`. Output: code in `artifacts/src/`.
+</important>
+
+---
+
+<important if="you are running Step 3b (Test Cases)">
+
+### Step 3b: Test Case Development
+
+Agent: `testcase-dev` (sonnet). Input: `artifacts/01-requirements-qa.md` + `artifacts/02-architecture-qa.md`. Output: `artifacts/03-test-cases.md`.
+</important>
+
+---
+
+<important if="you are running Step 4 (Testing)">
+
+### Step 4: Testing
+
+Agent: `tester` (sonnet). Input: `artifacts/src/` + `artifacts/03-test-cases.md`. Output: `artifacts/04-report.md`.
+Run all test cases. Report pass/fail per case. Final recommendation: PASS or FAIL.
+
+**-> DONE**. Show report summary.
+</important>
+
+---
+
+## Pipeline log
+
+Maintain `artifacts/00-pipeline-log.md`: step completion, settings, QA issues found/fixed.
+
+---
+
+<important if="you are starting, resuming, or proceeding between steps">
 
 ## Rules
-- Do NOT write code yourself. Delegate to the appropriate agent.
-- After each step, verify the artifact exists and is non-empty before proceeding.
-- If the tester reports failures, return to the coder agent with the failure context.
-- Keep a running log in artifacts/00-pipeline-log.md (date, step, status, notes).
-- **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
-"""
+
+- Announce each step before starting.
+- Verify artifact exists before next step.
+- QA Critical issues block progression -- fix first.
+- Do not modify completed artifacts without telling user.
+- **Source materials**: check `input/README.md` before each step. Save discoveries to `input/` and update manifest.
+</important>"""
 
 files['agents/requirements/CLAUDE.md'] = """\
 # Requirements analyst
@@ -1625,90 +1393,26 @@ INPUTEOF
 import os
 files = {}
 files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+## Session startup (ALWAYS run first)
 
-When your session starts in this project directory:
-
-1. Read `CLAUDE-RESUME.md` to check current status.
-2. Check `input/README.md` — look at the "New in this iteration" table.
-3. Act on status:
-   - **Complete / DONE**:
-     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
-     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
-   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
-   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+When your session starts:
+1. Read `CLAUDE-RESUME.md` for current status.
+2. Check `input/README.md` for new materials.
+3. Act: Complete->offer supplement/refresh, In-progress->offer resume, Fresh->wait.
 
 ---
 
-# Learning Guide Builder — Claude Code Orchestration Guide
+# Learning Guide Builder Orchestrator
 
-**You are Claude Code.** This file is your orchestration guide for running the learning guide pipeline (Steps 0–4).
-When the user asks you to run the pipeline (or resume it), follow these steps in order.
-
-**Before starting any step**, confirm model assignments with the user (see "Model confirmation" below).
+Multi-agent learning pipeline (6 agents). Topic -> 7-day study plan + resources + self-assessment.
 
 ---
 
 ## Pipeline overview
 
-```
-Step 0: Learning Architect (Agent subagent, Opus) → artifacts/00-learning-framework.md
-  → STOP: show knowledge map + beginner traps, wait for user confirmation/corrections
-        ↓
-Step 1: Multi-Lens Curation (3 parallel Agent subagents, Sonnet)
-  ├── Authority Curator  → artifacts/01a-authority-resources.md
-  ├── Community Curator  → artifacts/01b-community-resources.md
-  └── Critical Curator   → artifacts/01c-critical-perspectives.md
-        ↓
-Step 2: Study Plan Design (Claude Code writes directly) → artifacts/02-study-plan-draft.md
-  → STOP: show draft plan + resource coverage, wait for user review
-        ↓
-Step 3: Bias Review (Agent subagent, Sonnet) → artifacts/03-bias-review.md
-        ↓
-Step 4: Final Revision (Agent subagent, Opus) → 3 output files
-  → output/weekly-study-plan.md
-  → output/resource-index.md
-  → output/self-assessment.md
-  → STOP: show final package summary, wait for user confirmation
-        ↓
-→ DONE: Learning guide package ready.
+Step 0: Learning Architect -> knowledge map STOP: confirm -> Step 1: 3x parallel curators (Authority, Community, Critical) -> Step 2: Study Plan Design STOP: review -> Step 3: Bias Review -> Step 4: Final Revision -> output/
 
-  Tell the user:
-  "Learning guide package ready:
-   📄 output/weekly-study-plan.md  — 7-day structured learning plan
-   📋 output/resource-index.md     — annotated resource catalog with links
-   📝 output/self-assessment.md    — comprehensive self-check and mini-project
-
-   Open each file to review. The weekly plan and resource index are cross-linked
-   by resource IDs ([R-A-XX], [R-C-XX], [R-X-XX]).
-   Start with weekly-study-plan.md and follow Day 1."
-```
-
-**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
-
----
-
-## Model confirmation
-
-**Do this before Step 0.** Show the user the default model for each agent and ask whether they want to change any:
-
-| Step | Agent | Default model |
-|---|---|---|
-| 0 | Learning Architect | opus |
-| 1a–1c | Curators (×3, parallel) | sonnet |
-| 3 | Bias Reviewer | sonnet |
-| 4 | Curriculum Editor | opus |
-
-Ask: *"These are the default models. Reply 'confirm' to use them, or tell me any changes (e.g. 'bias-reviewer: opus' for deeper review)."*
-
-Wait for the user's reply before proceeding. Record the confirmed models in `artifacts/00-pipeline-log.md`:
-```
-model-learning-architect: <confirmed>
-model-curator: <confirmed>
-model-bias-reviewer: <confirmed>
-model-curriculum-editor: <confirmed>
-```
-
-Use the confirmed models when launching every agent below.
+**Source materials**: `input/README.md` -- check before each step.
 
 ---
 
@@ -1717,178 +1421,102 @@ Use the confirmed models when launching every agent below.
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
 | 0 | learning-architect | opus | input.md + input/README.md | artifacts/00-learning-framework.md |
-| 1a | authority-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01a-authority-resources.md |
-| 1b | community-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01b-community-resources.md |
-| 1c | critical-curator | sonnet | input.md + input/README.md + 00-learning-framework.md | artifacts/01c-critical-perspectives.md |
-| 2 | *(Claude Code directly)* | — | 01a/b/c + 00-learning-framework.md + input.md + input/README.md | artifacts/02-study-plan-draft.md |
-| 3 | bias-reviewer | sonnet | 02-study-plan-draft.md + 01a/b/c + 00-learning-framework.md + input.md + input/README.md | artifacts/03-bias-review.md |
-| 4 | curriculum-editor | opus | 02-study-plan-draft.md + 03-bias-review.md + 01a/b/c + 00-learning-framework.md + input.md + input/README.md | output/weekly-study-plan.md + output/resource-index.md + output/self-assessment.md |
-
-All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
+| 1a | authority-curator | sonnet | 00-learning-framework.md + input.md + input/README.md | artifacts/01a-authority-resources.md |
+| 1b | community-curator | sonnet | 00-learning-framework.md + input.md + input/README.md | artifacts/01b-community-resources.md |
+| 1c | critical-curator | sonnet | 00-learning-framework.md + input.md + input/README.md | artifacts/01c-critical-perspectives.md |
+| 2 | *(Claude Code directly)* | -- | 01a/b/c + 00-learning-framework.md + input/README.md | artifacts/02-study-plan-draft.md |
+| 3 | bias-reviewer | sonnet | 02-study-plan-draft.md + 01a/b/c + input/README.md | artifacts/03-bias-review.md |
+| 4 | curriculum-editor | opus | 03-bias-review.md + 02-study-plan-draft.md + input/README.md | output/weekly-study-plan.md + output/resource-index.md + output/self-assessment.md |
 
 ---
 
-## How Claude Code runs agents
+## How to run agents
 
-Use the **Agent tool** to spawn each subagent. The subagent reads its instruction file from
-`agents/<name>/CLAUDE.md`, reads its inputs, writes its output, and returns.
-
-Always include the **absolute project path** in every agent prompt.
-
-Template prompt:
+Use **Agent** tool subagents. Include absolute project path:
 ```
 Read agents/<name>/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-[any additional context]
+Project root: <absolute path>
 ```
 
-**Step 1 is the only parallel step**: launch all three curator subagents in a single message
-(three Agent tool calls at once).
-
-All other steps are sequential: verify the previous artifact exists and is non-empty before launching the next agent.
+**Step 1 is the only parallel step**. All others sequential.
 
 ---
 
-## Detailed steps
+<important if="you are starting the pipeline for the first time or the user asks to change models">
 
-### Step 0 — Learning Architect
+## Model confirmation
 
-Agent: `learning-architect`, model: opus.
-Input: `input.md`.
-Output: `artifacts/00-learning-framework.md`.
+| Step | Agent | Default |
+|---|---|---|
+| 0 | Learning Architect | opus |
+| 1 | 3x Curators (parallel) | sonnet |
+| 3 | Bias Reviewer | sonnet |
+| 4 | Curriculum Editor | opus |
 
-The agent will decompose the learning topic into a structured knowledge map and identify common beginner traps.
+Wait for reply before Step 0.
+</important>
 
-**→ STOP**: The agent's output will contain a knowledge map and a list of beginner traps. Present them to the user and ask:
-- Is the knowledge map accurate? Are modules missing or misordered?
-- Do you have any preferences for specific resources or learning approaches?
+---
 
-If the user replies "go" with no changes, proceed to Step 1. If the user provides corrections, update `artifacts/00-learning-framework.md` accordingly, then proceed.
+<important if="you are running Step 0 (Learning Architect)">
 
-### Step 1 — Multi-Lens Curation (parallel)
+### Step 0: Learning Architect
 
-Launch all three curators simultaneously. Each curator searches for resources from their specific lens:
+Agent: `learning-architect` (opus). Input: `input.md`. Output: `artifacts/00-learning-framework.md`.
 
-- **Authority Curator**: Official docs, books, academic papers, standards — the "correct path"
-- **Community Curator**: Tutorials, videos, blog posts, forums, repos — the "popular path"
-- **Critical Curator**: Pitfalls, limitations, controversies, "what I wish I knew" — the "honest path"
+**-> STOP**. Show knowledge map. Ask: "Proceed to resource curation?"
+</important>
 
-Quality gate after all three complete:
-- Each artifact must contain specific resources with working URLs.
-- Each artifact must cover every module in `artifacts/00-learning-framework.md`.
-- Authority Curator: minimum 2 resources per module.
-- Community Curator: minimum 2 resources per module.
-- Critical Curator: minimum 1 insight per module.
-- If any artifact is thin or incomplete, rerun that curator with a more focused prompt listing the gaps.
+---
 
-### Step 2 — Study Plan Design (Claude Code writes directly)
+<important if="you are running Step 1 (Multi-Lens Curation)">
 
-Read the three curator artifacts plus `artifacts/00-learning-framework.md` and `input.md`. Write `artifacts/02-study-plan-draft.md`.
+### Step 1: 3x Parallel Curators
 
-This is the draft 7-day study plan. Structure it as:
+Launch authority, community, critical curators (all sonnet) simultaneously. Each reads `artifacts/00-learning-framework.md` + `input.md`.
+</important>
 
-```
-# [Technology Name] 一周学习计划 (Draft)
+---
 
-## 学习目标
-[One sentence]
+<important if="you are running Step 2 (Study Plan Design)">
 
-## Day 1–7
-For each day:
-- Day title (a learning goal, not a topic label)
-- Core knowledge summary (Chinese, 2-4 paragraphs)
-- Recommended resources (with IDs [R-A-XX], [R-C-XX], [R-X-XX])
-- ⚠️ Pitfall warning
-- Self-test questions (3-5)
-- Further reading (optional)
-```
+### Step 2: Study Plan Design
 
-Rules for the draft:
-- Write ORIGINAL Chinese explanations — do not translate resources.
-- Resource references use IDs: [R-A-01], [R-C-03], [R-X-02] etc.
-- Assign a unique ID to every resource referenced.
-- Combine authority + community + critical findings — do NOT drop critical insights.
-- Each day targets 1-2 hours of focused learning.
-- Day 6-7 should emphasize synthesis, review, and practice.
-- Include a preliminary resource index section (will be finalized in Step 4).
+Write `artifacts/02-study-plan-draft.md` directly. Structure: 7 days, each with topic, resources, exercises, estimated time.
 
-**→ STOP**: Show the user:
-1. The draft 7-day plan summary
-2. Resource coverage: how many resources per day, how many from each curator lens
-3. Ask: "Does the pacing, depth, and resource mix look right? Reply 'go' to proceed to bias review, or request changes."
+**-> STOP**. Show draft. Ask "Adjustments?" before bias review.
+</important>
 
-If the user requests changes, update `artifacts/02-study-plan-draft.md` and re-confirm. If "go", proceed to Step 3.
+---
 
-### Step 3 — Bias Review
+<important if="you are running Steps 3-4 (Review & Finalize)">
 
-Agent: `bias-reviewer`, model: sonnet.
-Input: `artifacts/02-study-plan-draft.md` + all three curator artifacts + `artifacts/00-learning-framework.md` + `input.md`.
-Output: `artifacts/03-bias-review.md`.
+### Steps 3-4: Review & Finalize
 
-The bias reviewer audits the draft plan for:
-- Single-source dependency
-- Missing alternative perspectives
-- Theory-practice imbalance
-- Knowledge bias (echo chambers, tool/approach bias)
-- Beginner-friendliness (jargon leaps, unexplained concepts)
-- Completeness (coverage of all modules in the framework)
+- **Step 3**: `bias-reviewer` (sonnet) -> `artifacts/03-bias-review.md`
+- **Step 4**: `curriculum-editor` (opus) -> final `output/` package. Address all bias items.
 
-Quality gate: The review must produce at least 5 findings. Each finding must cite specific evidence and suggest a specific fix.
-
-### Step 4 — Final Revision
-
-Agent: `curriculum-editor`, model: opus.
-Input: `artifacts/02-study-plan-draft.md` + `artifacts/03-bias-review.md` + all three curator artifacts + `artifacts/00-learning-framework.md` + `input.md`.
-Output:
-- `output/weekly-study-plan.md` — the final 7-day plan
-- `output/resource-index.md` — complete annotated resource catalog
-- `output/self-assessment.md` — comprehensive self-check with mini-project
-
-Quality gate: Every finding in `artifacts/03-bias-review.md` must be addressed (accepted or rebutted).
-The three output files must be internally consistent — all resource IDs in the weekly plan must resolve to the resource index.
-
-**→ STOP — Final package ready**: Show the user:
-1. Weekly plan summary (day-by-day overview)
-2. Resource count breakdown (authority / community / critical)
-3. Self-assessment overview (concept questions + mini-project description)
-
-Ask: "Does this look right? You can edit the output files directly, or request changes now."
-
-If the user requests changes, relay them to the curriculum-editor agent with specific instructions.
-
-**→ DONE**: Once confirmed, tell the user:
-
-> "Learning guide package ready in `output/`:
->  📄 `weekly-study-plan.md` — your 7-day plan, start here
->  📋 `resource-index.md` — all resources with links and annotations
->  📝 `self-assessment.md` — test yourself when you finish
->
->  Start with `output/weekly-study-plan.md` and follow Day 1."
+**-> DONE**. Final package: `output/weekly-study-plan.md`, `output/resource-index.md`, `output/self-assessment.md`.
+</important>
 
 ---
 
 ## Pipeline log
 
-Maintain `artifacts/00-pipeline-log.md` throughout. Record:
-- Each step as it completes, with a timestamp
-- Confirmed model assignments
-- Any user edits or corrections injected during review stops
-- Summary of bias review findings (accepted vs. rebutted)
+Maintain `artifacts/00-pipeline-log.md`: step completion, settings, user edits.
 
 ---
 
+<important if="you are starting, resuming, or proceeding between steps">
+
 ## Rules
 
-1. Always announce which step you are starting and what it will produce.
-2. Never start Step 1 until the user confirms the learning framework (Step 0 stop).
-3. Never start Step 3 until the user confirms the study plan draft (Step 2 stop).
-4. Verify each artifact exists and is non-empty before starting the next step.
-5. Never modify existing artifacts from completed steps without telling the user first.
-6. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
-   and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
-7. The final output goes to `output/`, not `artifacts/` — the `output/` directory is the deliverable.
-8. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
-"""
+- Announce each step before starting.
+- Verify artifact exists before next step.
+- Parallel only at Step 1; all others sequential.
+- Do not modify completed artifacts without telling user.
+- **Source materials**: check `input/README.md` before each step. Save discoveries to `input/` and update manifest.
+</important>"""
 files['agents/learning-architect/CLAUDE.md'] = r"""# Learning Architect
 
 You are a curriculum design expert. Your job is to transform a broad "I want to learn X" statement into a rigorous, well-structured learning framework — before any content curators begin work. You catch blind spots that self-learners typically miss.
@@ -2427,89 +2055,26 @@ INPUTEOF
 import os
 files = {}
 files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+## Session startup (ALWAYS run first)
 
-When your session starts in this project directory:
-
-1. Read `CLAUDE-RESUME.md` to check current status.
-2. Check `input/README.md` — look at the "New in this iteration" table.
-3. Act on status:
-   - **Complete / DONE**:
-     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
-     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
-   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
-   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+When your session starts:
+1. Read `CLAUDE-RESUME.md` for current status.
+2. Check `input/README.md` for new materials.
+3. Act: Complete->offer supplement/refresh, In-progress->offer resume, Fresh->wait.
 
 ---
 
-# Codebase Deep Analysis Pipeline — Claude Code Orchestration Guide
+# Codebase Deep Analysis Orchestrator
 
-**You are Claude Code.** This file is your orchestration guide for running the codebase analysis pipeline (Steps 0–3).
-When the user asks you to run the pipeline (or resume it), follow these steps in order.
-
-**Before starting any step**, confirm model assignments with the user (see "Model confirmation" below).
+Multi-agent codebase analysis pipeline (5 agents). Repo -> Architecture -> Modules -> Literature -> Design -> Report.
 
 ---
 
 ## Pipeline overview
 
-```
-Step 0: Project Surveyor (Agent subagent, Opus) → artifacts/00-overview.md
-  → STOP: show project overview + community health, confirm analysis scope
-        ↓
-Step 1: Multi-Lens Analysis (3 parallel Agent subagents)
-  ├── Architecture Mapper (Opus)        → artifacts/01-architecture.md
-  ├── Module Deep-Diver (Sonnet)        → artifacts/01-module-analysis.md
-  └── Literature & Context Analyst (Sonnet) → artifacts/01-literature-review.md
-        ↓
-Step 2: Design Interpreter (Agent subagent, Opus) → artifacts/02-design-decisions.md
-  → STOP: show design insights + key decisions, user review
-        ↓
-Step 3: Synthesis (Claude Code writes directly) → artifacts/03-final-report.md
-  Complete onboarding report: architecture, modules, design philosophy,
-  literature summary, diagram specs, quick-start guide
-        ↓
-→ DONE: Final report ready.
+Step 0: Project Surveyor -> repo overview STOP: confirm -> Step 1: 3x parallel (Architecture Mapper, Module Deep-Diver, Literature Analyst) -> Step 2: Design Interpreter STOP: review -> Step 3: Synthesis -> artifacts/03-final-report.md
 
-  Tell the user:
-  "Codebase analysis complete:
-   📄 artifacts/03-final-report.md — full onboarding report
-   📐 artifacts/03-final-report.md Section 7 — architecture diagram specs
-
-   Next steps:
-   - Read artifacts/03-final-report.md for the complete analysis
-   - Review the diagram specs and run /diagram to generate architecture diagrams
-   - Use the Quick-Start Guide (Section 6) to begin contributing
-   - Check the Further Reading (Section 8) for deep dives"
-```
-
-**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
-
----
-
-## Model confirmation
-
-**Do this before Step 0.** Show the user the default model for each agent and ask whether they want to change any:
-
-| Step | Agent | Default model |
-|---|---|---|
-| 0 | Project Surveyor | opus |
-| 1a | Architecture Mapper | opus |
-| 1b | Module Deep-Diver | sonnet |
-| 1c | Literature & Context Analyst | sonnet |
-| 2 | Design Interpreter | opus |
-
-Ask: *"These are the default models. Reply 'confirm' to use them, or tell me any changes (e.g. 'module-deepdiver: opus' for deeper code analysis)."*
-
-Wait for the user's reply before proceeding. Record the confirmed models in `artifacts/00-pipeline-log.md`:
-```
-model-project-surveyor: <confirmed>
-model-architecture-mapper: <confirmed>
-model-module-deepdiver: <confirmed>
-model-literature-analyst: <confirmed>
-model-design-interpreter: <confirmed>
-```
-
-Use the confirmed models when launching every agent below.
+**Source materials**: `input/README.md` -- check before each step.
 
 ---
 
@@ -2521,178 +2086,98 @@ Use the confirmed models when launching every agent below.
 | 1a | architecture-mapper | opus | input.md + input/README.md + 00-overview.md | artifacts/01-architecture.md |
 | 1b | module-deepdiver | sonnet | input.md + input/README.md + 00-overview.md | artifacts/01-module-analysis.md |
 | 1c | literature-analyst | sonnet | input.md + input/README.md + 00-overview.md | artifacts/01-literature-review.md |
-| 2 | design-interpreter | opus | 01-architecture + 01-module-analysis + 01-literature-review + 00-overview + input/README.md | artifacts/02-design-decisions.md |
-| 3 | *(Claude Code directly)* | — | all prior artifacts + input.md + input/README.md | artifacts/03-final-report.md |
-
-All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
+| 2 | design-interpreter | opus | 01-arch + 01-module + 01-lit + input/README.md | artifacts/02-design-decisions.md |
+| 3 | *(Claude Code directly)* | -- | 02-design-decisions + 01-* + input/README.md | artifacts/03-final-report.md |
 
 ---
 
-## How Claude Code runs agents
+## How to run agents
 
-Use the **Agent tool** to spawn each subagent. The subagent reads its instruction file from
-`agents/<name>/CLAUDE.md`, reads its inputs, writes its output, and returns.
-
-Always include the **absolute project path** in every agent prompt.
-
-Template prompt:
+Use **Agent** tool subagents. Include absolute project path:
 ```
 Read agents/<name>/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-[any additional context]
+Project root: <absolute path>
 ```
 
-**Step 1 is the only parallel step**: launch all three subagents in a single message
-(three Agent tool calls at once).
-
-All other steps are sequential: verify the previous artifact exists and is non-empty before launching the next agent.
+**Step 1 is the only parallel step**. All others sequential.
 
 ---
 
-## Detailed steps
+<important if="you are starting the pipeline for the first time or the user asks to change models">
 
-### Step 0 — Project Surveyor
+## Model confirmation
 
-Agent: `project-surveyor`, model: opus.
-Input: `input.md`.
-Output: `artifacts/00-overview.md`.
+| Step | Agent | Default |
+|---|---|---|
+| 0 | Project Surveyor | opus |
+| 1a | Architecture Mapper | opus |
+| 1b | Module Deep-Diver | sonnet |
+| 1c | Literature Analyst | sonnet |
+| 2 | Design Interpreter | opus |
 
-The agent will scan the repository and produce a project overview covering identity, tech stack, scale, community health, and repo structure.
+Wait for reply before Step 0.
+</important>
 
-Launch the agent:
-```
-Read agents/project-surveyor/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-```
+---
 
-**→ STOP**: After it completes, show the user:
-1. Project identity and tech stack summary
-2. Scale metrics (LOC, contributors, activity level)
-3. Community health indicators
-4. Key directories and modules discovered
+<important if="you are running Step 0 (Project Surveyor)">
 
-Ask:
-- "Does this match your understanding of the project?"
-- "Are there specific modules or aspects you want us to focus on?"
-- "Should we broaden or narrow the analysis scope?"
+### Step 0: Project Surveyor
 
-If the user provides corrections or focus areas, note them in `artifacts/00-pipeline-log.md`. If the user says "go/proceed", move to Step 1.
+Agent: `project-surveyor` (opus). Input: `input.md` (repo_url). Output: `artifacts/00-overview.md`.
 
-### Step 1 — Multi-Lens Analysis (parallel)
+**-> STOP**. Show overview + community health. Confirm analysis scope.
+</important>
 
-Launch all three agents simultaneously. Each analyzes the project from their specific lens:
+---
 
-- **Architecture Mapper**: Module layout, component relationships, dependency graph, entry points
-- **Module Deep-Diver**: Key source files, code patterns, critical paths, notable implementations
-- **Literature & Context Analyst**: Academic papers, design docs/RFCs, tech blogs, conference talks, competitor analysis
+<important if="you are running Step 1 (Multi-Lens Analysis)">
 
-Launch all three in one message:
-```
-Read agents/architecture-mapper/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
+### Step 1: 3x Parallel Analysis
 
-Read agents/module-deepdiver/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
+Launch architecture, module, literature agents simultaneously. Each reads `input.md` + `artifacts/00-overview.md`.
+</important>
 
-Read agents/literature-analyst/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-```
+---
 
-Quality gate after all three complete:
-- `01-architecture.md`: must identify clear module boundaries, a dependency graph (text or mermaid), and at least 3 architectural patterns
-- `01-module-analysis.md`: must cover at least 3 modules, cite specific files/line numbers, and identify code patterns with examples
-- `01-literature-review.md`: must cover academic papers (if any exist), design docs from the repo, and provide competitive context
-- If any artifact is thin or incomplete, rerun that agent with a more focused prompt
+<important if="you are running Step 2 (Design Interpreter)">
 
-### Step 2 — Design Interpreter
+### Step 2: Design Interpreter
 
-Agent: `design-interpreter`, model: opus.
-Input: `artifacts/01-architecture.md` + `artifacts/01-module-analysis.md` + `artifacts/01-literature-review.md` + `artifacts/00-overview.md`.
-Output: `artifacts/02-design-decisions.md`.
+Agent: `design-interpreter` (opus). Input: all Step 1 artifacts. Output: `artifacts/02-design-decisions.md`.
 
-This agent synthesizes the architecture analysis, code deep-dive, and literature review to interpret the "why" behind the project's design — design philosophy, trade-offs, evolution, and key decisions.
+**-> STOP**. Show design philosophy, key decisions, trade-offs. User reviews before synthesis.
+</important>
 
-**→ STOP**: After it completes, show the user:
-1. Design philosophy and core values (2-3 sentences)
-2. Top 3-5 design decisions with rationale
-3. Key trade-offs identified
-4. Architectural evolution insights
-5. Project strengths and weaknesses
+---
 
-Ask:
-- "Do these design insights match your understanding?"
-- "Are there specific decisions you want deeper analysis on?"
-- "Shall we proceed to the final synthesis report?"
+<important if="you are running Step 3 (Synthesis)">
 
-If the user provides input, update `artifacts/02-design-decisions.md` accordingly. If "go", proceed to Step 3.
+### Step 3: Synthesis
 
-### Step 3 — Synthesis (Claude Code writes directly)
+Write `artifacts/03-final-report.md` directly. Structure: architecture overview, module deep-dive, design decisions, literature summary, diagram specs, quick-start guide.
 
-Read all prior artifacts plus `input.md`. Write `artifacts/03-final-report.md` with this structure:
-
-1. **Executive Summary** — what the project does, who it's for, one-paragraph architecture overview
-2. **Project Identity** — from 00-overview.md: tech stack, scale, community
-3. **Architecture Overview** — from 01-architecture.md: module map, dependency graph, patterns
-4. **Module Deep-Dive** — from 01-module-analysis.md: key modules, code patterns, critical paths
-5. **Literature & Context** — from 01-literature-review.md: papers, docs, community, competitors
-6. **Design Philosophy** — from 02-design-decisions.md: core values, key decisions, trade-offs, evolution
-7. **Architecture Diagram Specs** — generate diagram specifications following the Diagram Spec Format:
-   ```
-   For each diagram the report needs, produce a spec block:
-
-   ### Diagram: [descriptive name]
-   - **Type**: [architecture | sequence | flow | component | class | deployment]
-   - **Tool**: [mermaid | python-diagrams | graphviz | manual]
-   - **Content**: [what nodes, relationships, layers to show]
-   - **Output path**: diagrams/slide<NN>-<slug>.png
-   ```
-   Include at minimum: (a) high-level architecture diagram, (b) one critical data flow or sequence diagram
-8. **Quick-Start Guide** — how to set up dev environment, run tests, find good first issues
-9. **Further Reading** — papers, docs, blog posts, conference talks, related projects
-
-Rules for synthesis:
-- Do NOT drop inconvenient findings or critical perspectives.
-- Cross-reference between sections (e.g., "see Architecture Overview §3 for the module dependency graph").
-- The report should be comprehensive but scannable — use tables, bullet points, and clear section headers.
-- Diagram specs must be concrete enough for /diagram to render without ambiguity.
-
-**→ DONE**: After writing the report, tell the user:
-> "Codebase analysis complete:
->  📄 artifacts/03-final-report.md — full onboarding report with 9 sections
->  📐 Section 7 — architecture diagram specs ready for /diagram
->
->  Next steps:
->  - Read artifacts/03-final-report.md for the complete picture
->  - Run /diagram to generate architecture diagrams from Section 7 specs
->  - Use the Quick-Start Guide (Section 8) to set up your dev environment
->  - Check Further Reading (Section 9) for deep dives and related work"
+**-> DONE**. Report ready.
+</important>
 
 ---
 
 ## Pipeline log
 
-Maintain `artifacts/00-pipeline-log.md` throughout. Record:
-- Each step as it completes, with a timestamp
-- Confirmed model assignments
-- Any user edits or corrections injected during review stops
-- Summary of key findings
+Maintain `artifacts/00-pipeline-log.md`.
 
 ---
 
+<important if="you are starting, resuming, or proceeding between steps">
+
 ## Rules
 
-1. Always announce which step you are starting and what it will produce.
-2. Never start Step 0 until the user confirms the model assignments.
-3. Never start Step 1 until the user confirms the overview (Step 0 stop).
-4. Never start Step 1 until Step 0 is complete and confirmed.
-5. Never start Step 2 until all three Step 1 artifacts are complete and non-empty.
-6. Never start Step 3 until the user confirms the design insights (Step 2 stop).
-7. Verify each artifact exists and is non-empty before starting the next step.
-8. Never modify existing artifacts from completed steps without telling the user first.
-9. If the user wants to resume a partial pipeline run, read `artifacts/00-pipeline-log.md`
-   and `CLAUDE-RESUME.md` to determine the current state, then continue from there.
-10. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
-"""
+- Announce each step before starting.
+- Verify artifact exists before next step.
+- Parallel only at Step 1; all others sequential.
+- Do not modify completed artifacts without telling user.
+- **Source materials**: check `input/README.md` before each step. Save discoveries to `input/` and update manifest.
+</important>"""
 
 files['agents/project-surveyor/CLAUDE.md'] = """# Project Surveyor
 
@@ -3446,107 +2931,28 @@ INPUTEOF
 import os
 files = {}
 files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+## Session startup (ALWAYS run first)
 
-When your session starts in this project directory:
-
-1. Read `CLAUDE-RESUME.md` to check current status.
-2. Check `input/README.md` — look at the "New in this iteration" table.
-3. Act on status:
-   - **Complete / DONE**:
-     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
-     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
-   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
-   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+When your session starts:
+1. Read `CLAUDE-RESUME.md` for current status.
+2. Check `input/README.md` for new materials.
+3. Act: Complete->offer supplement/refresh, In-progress->offer resume, Fresh->wait.
 
 ---
 
-# Technology Assessment Pipeline — Claude Code Orchestration Guide
+# Technology Assessment Pipeline Orchestrator
 
-**You are Claude Code.** This file is your orchestration guide for running the technology
-assessment research pipeline (Steps 0-6). The pipeline produces a **technical research report**
-(`artifacts/03-report.md`) — there is NO PPT phase.
-
-When the user asks you to run the pipeline (or resume it), follow these steps in order.
-
-**Before starting any step**, confirm model assignments with the user (see "Model confirmation").
+Multi-agent tech assessment pipeline (11 agents). 4 lenses -> analysis -> technical report (no PPT).
 
 ---
 
 ## Pipeline overview
 
-```
-Step 0: Tech Question Architect (Opus) → artifacts/00-question-map.md
-  → STOP: show question map + tech blind-spot checklist, wait for user confirmation/additions
-        ↓
-Step 1: Multi-Lens Research (4 parallel Agent subagents, Sonnet)
-  ├── Leadership Researcher  → artifacts/01a-research-leadership.md
-  ├── Competitive Researcher → artifacts/01b-research-competitive.md
-  ├── Trend Researcher       → artifacts/01c-research-trend.md
-  └── Challenges Researcher  → artifacts/01d-research-challenges.md
-        ↓
-Step 2: Synthesis (Claude Code writes directly) → artifacts/01-research.md
-  → STOP: show synthesis summary + Knowledge Gap Map + surfaced key papers.
-    Ask the user whether to run an (optional) paper deep-dive. Wait for confirmation.
-        ↓
-Step 2.5 (OPTIONAL — only if the user opts in): Paper Deep-Dive (Sonnet)
-  → Paper Analyst reads each seed paper (read-arxiv-paper), writes a Chinese
-    translation to papers/<id>-zh.md (arxiv-paper-translator), and writes
-    artifacts/01e-paper-analysis.md. Key findings are merged back into 01-research.md.
-        ↓
-Step 2.6 (OPTIONAL — only if the technology has a code repo AND the user opts in):
-  Repo Deep-Dive (Sonnet)
-  → Repo Analyst inspects the GitHub repo's key specs/RFCs/design docs, issues,
-    and PRs (via the gh CLI + WebFetch) and writes artifacts/01f-repo-analysis.md:
-    key decision points, community trends, governance, signals/risks.
-    Key findings are merged back into 01-research.md.
-  → If the user declines either optional step, skip it (behaviour identical to no step).
-        ↓
-Step 3: Analysis — first pass (Agent subagent, Opus) → artifacts/02-analysis.md
-        ↓
-Step 4: Devil's Advocate (Agent subagent, Sonnet) → artifacts/02a-challenges.md
-        ↓
-Step 5: Analysis Revision (Agent subagent, Opus) → artifacts/02-analysis-final.md
-  → STOP: summarize findings + expert knowledge injection window, wait for user go-ahead
-        ↓
-Step 6: Report Writer (Agent subagent, Opus) → artifacts/03-report.md
-        ↓
-Step 7: Output selection — Markdown (always) / PDF (HTML→PDF) / PPTX (Narrative Architect → Cowork)
-```
+Step 0: Tech Question Architect -> STOP: confirm -> Step 1: 4x parallel researchers (technical, market, risk, architectural) -> Step 2: Synthesis + Gap Map STOP: fill gaps -> Step 3: Analyst -> Step 4: Devil's Advocate -> Step 5: Analyst revision STOP: expert input -> Step 6: Report Writer -> artifacts/03-report.md
 
-**Source materials**: `input/README.md` — check for PDFs, web snapshots, and repos before each step.
+Output: Markdown (always) / PDF. No PPTX output for tech pipeline.
 
----
-
-## Model confirmation
-
-**Do this before Step 0.** Show the user the default model for each agent and ask whether they want to change any:
-
-| Step | Agent | Default model |
-|---|---|---|
-| 0 | Tech Question Architect | opus |
-| 1a-1d | Researchers (×4, parallel) | sonnet |
-| 2.5 | Paper Analyst (optional) | sonnet — bump to opus for dense theory papers |
-| 2.6 | Repo Analyst (optional) | sonnet |
-| 3 | Analyst — first pass | opus |
-| 4 | Devil's Advocate | sonnet |
-| 5 | Analyst — revision | opus |
-| 6 | Report Writer | opus |
-| 7 | Narrative Architect (PPTX only) | sonnet |
-
-Ask: *"These are the default models. Reply 'confirm' to use them, or tell me any changes (e.g. 'report-writer: sonnet' to reduce cost)."*
-
-Wait for the user's reply before proceeding. Record the confirmed models in `artifacts/00-pipeline-log.md`:
-```
-model-question-architect: <confirmed>
-model-researcher: <confirmed>
-model-paper-analyst: <confirmed (optional step)>
-model-repo-analyst: <confirmed (optional step)>
-model-analyst: <confirmed>
-model-devils-advocate: <confirmed>
-model-report-writer: <confirmed>
-```
-
-Use the confirmed models when launching every agent below.
+**Source materials**: `input/README.md` -- check before each step.
 
 ---
 
@@ -3555,277 +2961,134 @@ Use the confirmed models when launching every agent below.
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
 | 0 | tech-question-architect | opus | input.md + input/README.md | artifacts/00-question-map.md |
-| 1a | researcher-leadership | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01a-research-leadership.md |
-| 1b | researcher-competitive | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01b-research-competitive.md |
-| 1c | researcher-trend | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01c-research-trend.md |
-| 1d | researcher-challenges | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01d-research-challenges.md |
-| 2 | *(Claude Code directly)* | — | 01a/b/c/d + input.md + input/README.md + 00-question-map.md | artifacts/01-research.md |
-| 2.5 | paper-analyst (optional) | sonnet | user-supplied paper list + 01-research.md + input/README.md | artifacts/01e-paper-analysis.md + papers/<id>-zh.md |
-| 2.6 | repo-analyst (optional) | sonnet | repo URL + 01-research.md + input/README.md | artifacts/01f-repo-analysis.md |
-| 3 | tech-analyst (first pass) | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
-| 4 | devils-advocate | sonnet | 02-analysis.md + 01-research.md + input.md + input/README.md | artifacts/02a-challenges.md |
-| 5 | tech-analyst (revision) | opus | 02a-challenges.md + 02-analysis.md + input/README.md | artifacts/02-analysis-final.md |
-| 6 | report-writer | opus | 02-analysis-final.md + 01-research.md + input.md + input/README.md | artifacts/03-report.md |
-| 7 | narrative-architect (PPTX only) | sonnet | 03-report.md + input.md + input/README.md | artifacts/04-narrative.md + artifacts/04-diagram-specs.md |
-
-All agents also read `input/README.md` for available source materials (PDFs, web snapshots, repos) placed in `input/pdf/`, `input/web/`, or `input/repo/`.
+| 1a | researcher-technical | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01a-research-technical.md |
+| 1b | researcher-market | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01b-research-market.md |
+| 1c | researcher-risk | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01c-research-risk.md |
+| 1d | researcher-architectural | sonnet | input.md + input/README.md + 00-question-map.md | artifacts/01d-research-architectural.md |
+| 2 | *(Claude Code directly)* | -- | 01a/b/c/d + 00-question-map + input/README.md | artifacts/01-research.md |
+| 3 | analyst | opus | 01-research.md + input.md + input/README.md | artifacts/02-analysis.md |
+| 4 | devils-advocate | sonnet | 02-analysis + 01-research + input/README.md | artifacts/02a-challenges.md |
+| 5 | analyst (revision) | opus | 02a-challenges + 02-analysis + input/README.md | artifacts/02-analysis-final.md |
+| 6 | report-writer | opus | 02-analysis-final + 01-research + input/README.md | artifacts/03-report.md |
 
 ---
 
-## How Claude Code runs agents
+## How to run agents
 
-Use the **Task tool** (or Agent subagent) to spawn each subagent. The subagent reads its instruction file from
-`agents/<name>/CLAUDE.md`, reads its inputs, writes its output, and returns.
-
-Always include the **absolute project path** and the **confirmed language settings** in every agent prompt.
-
-Template prompt:
+Use **Agent** tool subagents. Include absolute project path:
 ```
 Read agents/<name>/CLAUDE.md for your full instructions.
-Project root: <absolute path to this project>
-Report language: <confirmed, e.g. Chinese>
-[any additional context]
+Project root: <absolute path>
 ```
 
-**Step 1 is the only parallel step**: launch all four researcher subagents in a single message
-(four Task/Agent tool calls at once).
-
-All other steps are sequential: verify the previous artifact exists and is non-empty before launching the next agent.
+**Step 1 is the only parallel step** -- launch all 4 researchers simultaneously. All others sequential.
 
 ---
 
-## Detailed steps
+<important if="you are starting the pipeline for the first time or the user asks to change models">
 
-### Step 0 — Tech Question Architect
+## Model confirmation
 
-Agent: `tech-question-architect`, model: opus.
-Input: `input.md`. Output: `artifacts/00-question-map.md`.
-
-The agent prints a formatted STOP block. After it completes, show that block to the user.
-
-**→ STOP**: The agent's output contains a checklist of commonly-missed technical dimensions and items flagged `[Expert input needed]`. Ask the user:
-- Corrections or additions to the question map?
-- Expert knowledge to pre-fill any `[Expert input needed]` items now?
-
-If the user provides expert knowledge, write it into `artifacts/00-expert-input.md` (create if missing). Researchers read this in Step 1.
-
-If the user replies "go", proceed to Step 1.
-
-### Step 1 — Multi-Lens Research (parallel)
-
-Launch all four researchers simultaneously. Pass the question map to each: they use `artifacts/00-question-map.md` to guide their sub-questions, especially `[Expert input needed]` items (attempt but mark unresolved if public evidence is insufficient).
-
-If `artifacts/00-expert-input.md` exists, include it in each agent prompt.
-
-Quality gate after all four complete:
-- Each artifact must contain specific numbers, named sources, benchmarks, or URLs.
-- Each must address at least the sub-questions in `00-question-map.md` that fall within its lens.
-- If any artifact is vague or thin, rerun that researcher with a focused prompt listing the gaps.
-
-### Step 2 — Synthesis (Claude Code writes directly)
-
-Read the four research artifacts plus `input.md` and `00-question-map.md`. Write `artifacts/01-research.md`:
-1. Executive summary (3-5 sentences)
-2. Leadership & maturity evidence
-3. Competitive landscape evidence
-4. Trend evidence
-5. Key difficulties & challenges evidence
-6. Conflicts and open questions (where researchers disagreed)
-7. Source list
-8. **Knowledge Gap Map**
-
-**Section 8 — Knowledge Gap Map** format:
-
-| Question | Coverage | Notes |
+| Step | Agent | Default |
 |---|---|---|
-| [sub-question from 00-question-map.md] | Public ✓ / Sparse ~ / Not found ✗ / Expert needed ★ | what was found or why missing |
+| 0 | Tech Question Architect | opus |
+| 1 | 4x Researchers (parallel) | sonnet |
+| 3 | Analyst (first pass) | opus |
+| 4 | Devil's Advocate | sonnet |
+| 5 | Analyst (revision) | opus |
+| 6 | Report Writer | opus |
 
-Rules: every sub-question must appear; be honest about gaps; do NOT drop the challenges researcher's findings; where researchers disagree, present BOTH sides; preserve all numbers, named sources, benchmarks, and URLs.
+Wait for reply before Step 0.
+</important>
 
-Also extract a **Key Papers** list: scan the four research artifacts for cited papers (arXiv IDs / titles / URLs) and list the ones central to the technology, so the user can decide whether a deep-dive is warranted.
+---
 
-**→ STOP**: Show the user:
-1. A synthesis summary + the Knowledge Gap Map (call out `★ Expert needed` / `✗ Not found`).
-2. The **Key Papers** list.
+<important if="you are running Step 0 (Tech Question Architect)">
 
-Then ask THREE things:
-- **Expert gap-fill**: "Do you have expert knowledge to fill any gaps before analysis?" If yes, append to `01-research.md` marked `[Expert input — added at Step 2 review]` and update the gap map.
-- **Paper deep-dive (optional)**: "Do you want a deep-dive on any papers? If yes, paste the arXiv links/IDs (or tell me to pick the core ones). I'll read each, produce a Chinese translation under `papers/`, and fold the findings into the research."
-- **Repo deep-dive (optional)**: Only offer this if the technology has a GitHub (or similar) code repo. "Do you want a deep-dive on the repo's specs/RFCs/issues? If yes, confirm the repo URL. I'll analyze key decision points and community trends, and fold the findings into the research."
+### Step 0: Tech Question Architect
 
-Run any opted-in deep-dives (**Step 2.5** paper, **Step 2.6** repo) before Step 3. If the user opts into none, wait for "go" and proceed straight to Step 3.
+Agent: `tech-question-architect` (opus). Input: `input.md`. Output: `artifacts/00-question-map.md`.
 
-### Step 2.5 — Paper Deep-Dive (OPTIONAL — only if the user opted in at the Step 2 stop)
+**-> STOP**. Show question map. Ask: "Proceed to research?"
+</important>
 
-Agent: `paper-analyst`, model: sonnet (bump to opus for dense theory papers).
-Input: the user-supplied paper list (arXiv IDs/URLs) + `artifacts/01-research.md`.
-Output: `artifacts/01e-paper-analysis.md` + one Chinese translation file per paper under `papers/`.
+---
 
-Pass the confirmed seed paper list in the agent prompt. **CRITICAL — add this line verbatim to the agent prompt:** "You MUST invoke the `read-arxiv-paper` and `arxiv-paper-translator` skills via the Skill tool for every paper. WebFetch/WebSearch are NOT acceptable substitutes. See your CLAUDE.md for the mandatory workflow."
+<important if="you are running Step 1 (4-Lens Research)">
 
-After the agent returns:
-1. Merge its key findings into `artifacts/01-research.md` under a new subsection `## Paper Deep-Dive (added at Step 2.5)`, preserving numbers and citations, and update the Knowledge Gap Map if any `★`/`✗` items are now resolved.
-2. Briefly show the user what was added and where the translations were saved.
-3. Wait for "go", then proceed to Step 3.
+### Step 1: 4x Parallel Research
 
-If the user did NOT opt in, skip this step entirely — `artifacts/01e-paper-analysis.md` stays empty and the pipeline behaves exactly as if there were no paper step.
+Launch technical, market, risk, architectural researchers (all sonnet) simultaneously.
+</important>
 
-### Step 2.6 — Repo Deep-Dive (OPTIONAL — only if the tech has a code repo AND the user opted in)
+---
 
-Agent: `repo-analyst`, model: sonnet.
-Input: the confirmed repo URL(s) + `artifacts/01-research.md`.
-Output: `artifacts/01f-repo-analysis.md`.
+<important if="you are running Step 2 (Synthesis)">
 
-Pass the repo URL in the agent prompt. The agent uses the `gh` CLI and WebFetch to inspect the repo's key specs/RFCs/design docs, issues, and PRs, then writes the consolidated analysis (key decision points, community trends, governance, signals/risks).
+### Step 2: Synthesis
 
-After the agent returns:
-1. Merge its key findings into `artifacts/01-research.md` under a new subsection `## Repo Deep-Dive (added at Step 2.6)`, preserving numbers, issue/PR references, and dates, and update the Knowledge Gap Map if any `★`/`✗` items are now resolved.
-2. Briefly show the user what was added.
-3. Wait for "go", then proceed to Step 3.
+Write `artifacts/01-research.md` directly. Structure: executive summary, key findings, data, comparable cases, conflicts, source list, **Knowledge Gap Map**.
 
-If the user did NOT opt in, skip this step entirely — `artifacts/01f-repo-analysis.md` stays empty.
+**-> STOP**. Show summary + gap map. Ask: "Expert knowledge to fill gaps?"
+</important>
 
-### Step 3 — Analysis (first pass)
+---
 
-Agent: `tech-analyst`, model: opus.
-Input: `artifacts/01-research.md` + `input.md`. Output: `artifacts/02-analysis.md`.
+<important if="you are running Steps 3-5 (Analysis Loop)">
 
-### Step 4 — Devil's Advocate
+### Steps 3-5: Analysis Loop
 
-Agent: `devils-advocate`, model: sonnet.
-Input: `artifacts/02-analysis.md` + `artifacts/01-research.md` + `input.md`. Output: `artifacts/02a-challenges.md`.
+- **Step 3**: `analyst` (opus) -> `artifacts/02-analysis.md`
+- **Step 4**: `devils-advocate` (sonnet) -> `artifacts/02a-challenges.md`
+- **Step 5**: `analyst` revision (opus) -> `artifacts/02-analysis-final.md`
 
-### Step 5 — Analysis Revision
+**-> STOP at Step 5**. Show findings. Offer expert input window.
+</important>
 
-Agent: `tech-analyst` (revision pass), model: opus.
-Input: `artifacts/02a-challenges.md` + `artifacts/02-analysis.md`. Output: `artifacts/02-analysis-final.md`.
+---
 
-Quality gate: Every challenge in `02a-challenges.md` must be addressed (accepted or rebutted). If any are ignored, send the analyst back.
+<important if="you are running Step 6 (Report Writer)">
 
-**→ STOP**: Show the user a summary of the final analysis (top conclusions, challenges accepted vs. rebutted, key risks) and this block:
+### Step 6: Report Writer
 
-```
-─────────────────────────────────────────
-Expert knowledge injection (optional)
-─────────────────────────────────────────
-Before the report is written, this is the last cheap point to add domain knowledge.
+Agent: `report-writer` (opus). Input: `artifacts/02-analysis-final.md` + `artifacts/01-research.md` + `input.md`. Output: `artifacts/03-report.md`.
 
-Remaining open gaps from the Knowledge Gap Map:
-[list all items still marked ★ or ✗ from artifacts/01-research.md Section 8]
+**-> STOP**: ask user: Markdown only or also PDF? Record in pipeline log.
+</important>
 
-Questions experts answer that LLMs typically miss for technology assessment:
-  • Real maturity: Is the headline capability production-grade or demo/benchmark only?
-  • Hidden engineering cost: What breaks at scale that papers/marketing omit?
-  • True competitive gap: Where do competitor claims diverge from measured behavior?
-  • IP / licensing walls: Patents, licenses, or export controls that constrain adoption?
-  • Trend counter-evidence: What could stall or reverse the projected trajectory?
+---
 
-If you have talked to domain experts, share any new information now.
-I will update artifacts/02-analysis-final.md before writing the report.
+<important if="the user asks for PDF output">
 
-Reply "go" to proceed, or share expert input.
-─────────────────────────────────────────
-```
+### PDF generation
 
-If the user provides expert input, append it to `artifacts/02-analysis-final.md` under `## Expert Input (added at Step 5 review)` and note what changed. Then wait for "go".
-
-### Step 6 — Report Writer
-
-Agent: `report-writer`, model: opus.
-Input: `artifacts/02-analysis-final.md` + `artifacts/01-research.md` + `input.md`.
-Output: `artifacts/03-report.md` — the final technical assessment report.
-
-**→ STOP (Step 7 — Output selection)**: The canonical report `artifacts/03-report.md` is ready. Ask the user which outputs they want (multi-select):
-- **Markdown report** — already produced at `artifacts/03-report.md` (always available).
-- **PDF** — render `03-report.md` via an HTML intermediate to `artifacts/05-report.pdf` (more reliable for CJK + tables + pagination than direct Markdown to PDF).
-- **PPTX** — run the Narrative Architect (to `04-narrative.md` + `04-diagram-specs.md`), then build the deck via Cowork (`COWORK.md`) to `artifacts/05-deck.pptx`.
-
-Record the choice in `artifacts/00-pipeline-log.md` as `output-formats: <list>`. Then:
-- For PDF: follow the **PDF generation recipe** below (prescribed tool chain — do NOT improvise tool selection).
-- For PPTX: launch `narrative-architect` (model: sonnet) reading `03-report.md`. After it writes `04-narrative.md` + `04-diagram-specs.md`, STOP and show the narrative skeleton + diagram list for confirmation. On confirm, optionally run `/diagram`, then hand to Cowork: "Read COWORK.md and build the deck."
-- If the user only wants the Markdown report, you are done.
-
-#### PDF generation recipe (MUST follow exactly)
-
-**Step 1 — Convert Markdown to styled HTML**
-
-Write `artifacts/05-report.html`. Use the `markdown` Python library (`pip install markdown` if needed) to convert `03-report.md` to HTML, then wrap it with a `<style>` block containing the CSS below. Alternatively, use `pandoc` (`pandoc 03-report.md -o 05-report.html --standalone`) and inject the `<style>` block into `<head>`.
-
-**Step 2 — CSS (MUST embed these @font-face rules)**
-
-The CSS must include font-face rules that point to ACTUAL system font files to guarantee CJK embedding. Do NOT use generic `font-family` names alone — they fail on macOS (PingFang is TTC format, weasyprint cannot parse TTC) and on Linux (no PingFang installed).
-
-Recommended CSS (platform-aware — detect the OS and use the right block):
-
-```css
-/* === macOS CJK fonts (use these on darwin) === */
-@font-face { font-family: 'CJK-Serif'; src: local('Songti SC'); }
-@font-face { font-family: 'CJK-Sans';  src: local('PingFang SC');  }
-@font-face { font-family: 'CJK-Mono';  src: local('STHeiti');      }
-
-/* === Linux CJK fonts (use these on Linux) === */
-/* Install first: apt-get install fonts-noto-cjk */
-@font-face { font-family: 'CJK-Serif'; src: local('Noto Serif CJK SC'); }
-@font-face { font-family: 'CJK-Sans';  src: local('Noto Sans CJK SC');  }
-@font-face { font-family: 'CJK-Mono';  src: local('Noto Sans Mono CJK SC'); }
-
-/* === page setup === */
-@page { size: A4; margin: 2cm 2.2cm; }
-body { font-family: 'CJK-Sans', 'CJK-Serif', sans-serif; font-size: 11pt;
-       line-height: 1.6; color: #1a1a1a; }
-h1, h2, h3 { font-family: 'CJK-Sans', sans-serif; page-break-after: avoid; }
-h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
-h2 { font-size: 14pt; }
-h3 { font-size: 12pt; }
-table { border-collapse: collapse; width: 100%; margin: 10pt 0; page-break-inside: avoid; }
-th, td { border: 0.5pt solid #888; padding: 4pt 8pt; font-size: 10pt; text-align: left; }
-th { background: #f0f0f0; font-weight: bold; }
-pre, code { font-family: 'CJK-Mono', monospace; font-size: 9pt; background: #f5f5f5; }
-img { max-width: 100%; page-break-inside: avoid; }
-```
-
-**Step 3 — Render HTML to PDF (use THIS tool, NOT weasyprint)**
-
-Use the Playwright MCP `browser_run_code` tool, OR a headless Chromium via CLI:
-
-```bash
-# Option A: Playwright (preferred — handles CJK natively)
-npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf
-
-# Option B: Chromium headless
-chromium --headless --no-sandbox --print-to-pdf=artifacts/05-report.pdf \
-  --no-pdf-header-footer artifacts/05-report.html
-```
-
-**DO NOT use weasyprint.** weasyprint cannot parse TTC (TrueType Collection) fonts — this means PingFang SC, Hiragino Sans, and most macOS CJK fonts will fail to embed, producing garbled/missing characters in the PDF. Headless Chromium embeds CJK fonts correctly on all platforms.
-
-**Step 4 — Verify the PDF**
-
-After generation, check the PDF:
-1. Open `artifacts/05-report.pdf` and verify all CJK characters render (no tofu □ boxes).
-2. Verify tables have borders and are not split across pages badly.
-3. If any character renders as □ or blank: the font embedding failed. Re-check Step 2 — make sure the `@font-face` block for YOUR platform was included in the CSS. On macOS, `local('PingFang SC')` works in browsers but NOT in weasyprint — that is why we use headless Chromium.
+1. Convert MD to HTML: `pandoc 03-report.md -o 05-report.html --standalone`
+2. Embed CJK font CSS with `@font-face` using `local('Noto Sans CJK SC')`
+3. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf`
+4. **Do NOT use weasyprint** (cannot parse TTC fonts). Verify no tofu boxes.
+</important>
 
 ---
 
 ## Pipeline log
 
-Maintain `artifacts/00-pipeline-log.md` throughout. Record each step as it completes (with timestamp), confirmed settings (report-language), and any expert input injected during review stops.
+Maintain `artifacts/00-pipeline-log.md`: step completion, settings, user edits, expert input.
 
 ---
 
+<important if="you are starting, resuming, or proceeding between steps">
+
 ## Rules
 
-1. Always announce which step you are starting and what it will produce.
-2. Never start Step 1 until the user confirms the question map (Step 0 stop).
-3. Never start Step 3 until the user confirms the synthesis (Step 2 stop).
-4. After the report, Step 7 lets the user pick outputs: Markdown (always), PDF (Markdown→HTML→PDF), PPTX (Narrative Architect + Cowork).
-5. Verify each artifact exists and is non-empty before starting the next step. EXCEPTION: `artifacts/01e-paper-analysis.md` (Step 2.5) and `artifacts/01f-repo-analysis.md` (Step 2.6) are optional outputs — they stay empty when the user declines that deep-dive, and that is fine.
-6. Steps 2.5 (Paper Deep-Dive) and 2.6 (Repo Deep-Dive) run ONLY if the user opts in at the Step 2 stop. Never launch the paper-analyst or repo-analyst on your own initiative. Only offer the repo deep-dive when the technology actually has a code repo.
-7. Never modify existing artifacts from completed steps without telling the user first.
-8. To resume a partial run, read `artifacts/00-pipeline-log.md` and `CLAUDE-RESUME.md` to determine state, then continue.
-9. **Source materials**: Every agent MUST check `input/README.md` for available source materials before starting. When an agent discovers or downloads a PDF, web page, or repo during execution, it MUST: (1) save the file to the corresponding `input/` subdirectory, and (2) add an entry to the manifest table in `input/README.md`.
-"""
+- Announce each step before starting.
+- Never start a step until previous STOP is confirmed.
+- Verify each artifact exists and non-empty before next step.
+- Parallel only at Step 1; all others sequential.
+- Step 1 quality gate: every artifact must contain numbers/sources/URLs.
+- Do not modify completed artifacts without telling user.
+- Resume: read `artifacts/00-pipeline-log.md` + `CLAUDE-RESUME.md`.
+- **Source materials**: check `input/README.md` before each step. Save discoveries to `input/` and update manifest.
+</important>"""
 
 files['agents/tech-question-architect/CLAUDE.md'] = """# Tech Question Architect
 
