@@ -133,7 +133,22 @@ INPUTEOF
         python3 << 'PYEOF'
 import os
 files = {}
-files['CLAUDE.md'] = """# Research Pipeline — Claude Code Orchestration Guide
+files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+
+When your session starts in this project directory:
+
+1. Read `CLAUDE-RESUME.md` to check current status.
+2. Check `input/README.md` — look at the "New in this iteration" table.
+3. Act on status:
+   - **Complete / DONE**:
+     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
+     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
+   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
+   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+
+---
+
+# Research Pipeline — Claude Code Orchestration Guide
 
 **You are Claude Code.** This file is your orchestration guide for running the research phase (Steps -2–6) of the research-to-PPT pipeline.
 When the user asks you to run the pipeline (or resume it), follow these steps in order.
@@ -1255,6 +1270,21 @@ import os
 files = {}
 
 files['CLAUDE.md'] = """\
+## Session startup (ALWAYS run first — before any response)
+
+When your session starts in this project directory:
+
+1. Read `CLAUDE-RESUME.md` to check current status.
+2. Check `input/README.md` — look at the "New in this iteration" table.
+3. Act on status:
+   - **Complete / DONE**:
+     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
+     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
+   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
+   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+
+---
+
 # Orchestrator
 
 You are the orchestrator of a multi-agent software development pipeline.
@@ -1594,7 +1624,22 @@ INPUTEOF
         python3 << 'PYEOF'
 import os
 files = {}
-files['CLAUDE.md'] = """# Learning Guide Builder — Claude Code Orchestration Guide
+files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+
+When your session starts in this project directory:
+
+1. Read `CLAUDE-RESUME.md` to check current status.
+2. Check `input/README.md` — look at the "New in this iteration" table.
+3. Act on status:
+   - **Complete / DONE**:
+     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
+     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
+   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
+   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+
+---
+
+# Learning Guide Builder — Claude Code Orchestration Guide
 
 **You are Claude Code.** This file is your orchestration guide for running the learning guide pipeline (Steps 0–4).
 When the user asks you to run the pipeline (or resume it), follow these steps in order.
@@ -2381,7 +2426,22 @@ INPUTEOF
         python3 << 'PYEOF'
 import os
 files = {}
-files['CLAUDE.md'] = """# Codebase Deep Analysis Pipeline — Claude Code Orchestration Guide
+files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+
+When your session starts in this project directory:
+
+1. Read `CLAUDE-RESUME.md` to check current status.
+2. Check `input/README.md` — look at the "New in this iteration" table.
+3. Act on status:
+   - **Complete / DONE**:
+     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
+     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
+   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
+   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+
+---
+
+# Codebase Deep Analysis Pipeline — Claude Code Orchestration Guide
 
 **You are Claude Code.** This file is your orchestration guide for running the codebase analysis pipeline (Steps 0–3).
 When the user asks you to run the pipeline (or resume it), follow these steps in order.
@@ -3385,7 +3445,22 @@ INPUTEOF
         python3 << 'PYEOF'
 import os
 files = {}
-files['CLAUDE.md'] = """# Technology Assessment Pipeline — Claude Code Orchestration Guide
+files['CLAUDE.md'] = """## Session startup (ALWAYS run first — before any response)
+
+When your session starts in this project directory:
+
+1. Read `CLAUDE-RESUME.md` to check current status.
+2. Check `input/README.md` — look at the "New in this iteration" table.
+3. Act on status:
+   - **Complete / DONE**:
+     - New materials found in `input/` → show them, ask: "New materials ready. Choose: **supplement** (standalone supplemental report) or **refresh** (update main report + changelog)?"
+     - No new materials → "Research complete. Add new materials to `input/` and start a new session to iterate."
+   - **Step N (in progress)**: "Research in progress at Step N. Reply 'continue' to resume from checkpoint, or tell me what you need."
+   - **Fresh / not started**: "Pipeline not started yet. Edit `input.md` with your topic, then say: Read CLAUDE.md and start the pipeline."
+
+---
+
+# Technology Assessment Pipeline — Claude Code Orchestration Guide
 
 **You are Claude Code.** This file is your orchestration guide for running the technology
 assessment research pipeline (Steps 0-6). The pipeline produces a **technical research report**

@@ -14,11 +14,13 @@ guides.
 - **software** — Multi-agent software development pipeline
   (requirements → architecture → code → test)
 - **study** — Learning guide builder producing a 7-day study plan
+- **coding** — Open source codebase deep analysis pipeline
+- **tech** — Technology assessment research pipeline (report output)
 
 ## How to use
 
 ```bash
-./init-pipeline.sh <research|software|study>
+./init-pipeline.sh <research|software|study|coding|tech>
 ```
 
 Each pipeline generates a self-contained project directory with its own
@@ -32,6 +34,21 @@ Claude Code: `Read CLAUDE.md and start the pipeline`.
 - CI validates shell scripts with `shellcheck` and markdown with
   `markdownlint`
 - The `init-pipeline.sh` script uses `set -e` and must pass shellcheck
+- **CHANGELOG.md**: Every commit or PR that changes functionality MUST
+  update `CHANGELOG.md`. Group entries by date, describe what changed per
+  commit. Use the existing date-heading format.
+
+## Session startup (for generated pipeline projects)
+
+Generated pipeline `CLAUDE.md` orchestrators include a session startup
+block. When Claude Code starts in a pipeline project:
+
+1. Read `CLAUDE-RESUME.md` for current status
+2. If Complete → check `input/` for new materials → offer supplement/refresh
+3. If in-progress → report current step, offer resume
+4. If fresh (Step -2) → pipeline not started, wait for user
+
+No separate command needed — detection runs automatically on session start.
 
 ## When editing init-pipeline.sh
 
