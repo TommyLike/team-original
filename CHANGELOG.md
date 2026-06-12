@@ -4,6 +4,22 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-06-12] — Session Startup + Iterative Research + CHANGELOG.md
+
+**Commit**: `94959f1`
+
+### Added
+- Session startup auto-detection block in all 5 orchestrator `CLAUDE.md` files
+- When Claude Code starts, automatically detects: Complete/Fresh/In-progress
+- Iterative research: supplement (standalone) or refresh (update main) mode
+- `CHANGELOG.md` — full history from initial commit to present
+- Project `CLAUDE.md` updated with changelog rule and session startup docs
+
+### Changed
+- Every future commit/PR must update `CHANGELOG.md`
+
+---
+
 ## [2026-06-11] — Input Directory + Refactoring
 
 **Commit**: `d3a6529`
