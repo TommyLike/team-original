@@ -3,12 +3,13 @@
 set -e
 
 usage() {
-    echo "Usage: init-pipeline <research|software|study|coding|tech>"
+    echo "Usage: init-pipeline <research|software|study|coding|tech|explore>"
     echo "  research         - Claude code and Cowork multi-agent research pipeline"
     echo "  software         - Multi-agent software development pipeline"
     echo "  study            - Learning guide builder pipeline (tech onboarding)"
     echo "  coding           - Open source codebase deep analysis pipeline"
     echo "  tech             - Technology assessment research pipeline (report output)"
+    echo "  explore          - Knowledge exploration & mastery pipeline (report output)"
     exit 1
 }
 
@@ -3798,6 +3799,653 @@ PYEOF
         echo ""
         echo "Next steps:"
         echo "  1. Edit input.md with your technology assessment target"
+        echo "  2. Open Claude Code in this folder and say: Read CLAUDE.md and start the pipeline"
+        ;;
+
+    explore)
+        echo "Setting up knowledge exploration & mastery pipeline in current directory..."
+
+        mkdir -p agents/topic-architect
+        mkdir -p agents/researcher-history agents/researcher-concepts
+        mkdir -p agents/researcher-landscape agents/researcher-critique
+        mkdir -p agents/devils-advocate agents/knowledge-report-writer
+        mkdir -p agents/paper-analyst
+        mkdir -p artifacts/versions docs memory papers
+
+        cat > input.md << 'INPUTEOF'
+# 探索主题
+[Describe the topic you want to master. Be as broad or specific as you like.
+Examples:
+  "羽毛球拍的发展历史、演进方向、主要厂商"
+  "日本战后经济奇迹的成因与教训"
+  "升学选择:国内读研 vs 出国留学的权衡维度"
+  "Rust 语言的设计哲学与适用边界"
+  "古希腊三大悲剧作家的风格差异与历史影响"]
+
+# 为什么想了解这个主题
+[What prompted your interest? What do you hope to get out of this?
+ This helps the pipeline calibrate depth vs. breadth.]
+
+# 已有知识背景 (optional)
+[What you already know. Helps avoid rehashing basics and go deeper.]
+
+# 特别关注的维度 (optional)
+[Any specific angles you care about most.
+ Leave blank to let the pipeline auto-discover dimensions.]
+
+# 语言偏好 (optional)
+[Default: Chinese for the report. Specify if you want English output.]
+style: [exact skill name or keyword, or leave blank for defaults]
+INPUTEOF
+
+        echo "# Pipeline log" > artifacts/00-pipeline-log.md
+        : > artifacts/00-question-map.md
+        : > artifacts/01a-research-history.md
+        : > artifacts/01b-research-concepts.md
+        : > artifacts/01c-research-landscape.md
+        : > artifacts/01d-research-critique.md
+        : > artifacts/01e-paper-analysis.md
+        : > artifacts/01-research.md
+        : > artifacts/02-challenges.md
+        : > artifacts/03-report.md
+        printf '# CLAUDE-RESUME.md\n\n## Current status\n\n**Next step**: Step 0 — Topic Architect\n\n## Phases\n- **Claude Code** (Steps 0-4): topic decomposition, 4-lens research, synthesis, devil'\''s advocate, knowledge report\n- Run with: Read CLAUDE.md and start the pipeline\n- Final deliverable: artifacts/03-report.md (knowledge mastery report)\n' > CLAUDE-RESUME.md
+
+        python3 << 'PYEOF'
+import os
+files = {}
+files['CLAUDE.md'] = """# Knowledge Exploration Pipeline — Claude Code Orchestration Guide
+
+**You are Claude Code.** This file is your orchestration guide for running the knowledge exploration pipeline (Steps 0-4). The pipeline produces a **comprehensive knowledge report** that lets the user master a domain through reading + follow-up conversation.
+
+When the user asks you to run the pipeline (or resume it), follow these steps in order.
+
+**Before starting any step**, confirm model assignments with the user (see "Model confirmation").
+
+---
+
+## Pipeline overview
+
+```
+Step 0: Topic Architect (Opus) → artifacts/00-question-map.md
+  → STOP: show question map + blind-spot checklist, wait for user confirmation
+        ↓
+Step 1: Multi-Perspective Research (4 parallel Agent subagents, Sonnet)
+  ├── History & Evolution   → artifacts/01a-research-history.md
+  ├── Concepts & Frameworks → artifacts/01b-research-concepts.md
+  ├── Current Landscape     → artifacts/01c-research-landscape.md
+  └── Depth & Critique      → artifacts/01d-research-critique.md
+        ↓
+Step 2: Synthesis (Claude Code writes directly) → artifacts/01-research.md
+  → STOP: show synthesis + Knowledge Gap Map + surfaced key papers.
+    Ask the user whether to run an (optional) paper deep-dive. Wait for go-ahead.
+        ↓
+Step 2.5 (OPTIONAL — only if the user opts in): Paper Deep-Dive (Sonnet)
+  → Same paper-analyst agent as the tech pipeline. Reads seed papers via
+    read-arxiv-paper + arxiv-paper-translator skills, writes Chinese
+    translations to papers/<id>-zh.md and analysis to artifacts/01e-paper-analysis.md.
+        ↓
+Step 3: Devil's Advocate (Agent subagent, Sonnet) → artifacts/02-challenges.md
+  → THIS IS A COVERAGE AUDIT, not an attack on recommendations.
+    The DA identifies missing perspectives, oversimplifications, weak sources,
+    neglected counter-narratives, and cultural/regional biases.
+        ↓
+Step 4: Knowledge Report Writer (Agent subagent, Opus) → artifacts/03-report.md
+  → Reads 01-research.md + 02-challenges.md. Incorporates DA-identified gaps
+    directly into the report (no accept/rebut cycle — the gaps ARE the content).
+        ↓
+→ DONE: Tell the user:
+  "Knowledge report ready: artifacts/03-report.md
+   You can now ask me anything about this topic — I have the full research context.
+   For a PDF: say 'render the report as PDF'."
+```
+
+---
+
+## Model confirmation
+
+**Do this before Step 0.** Show the user the default model for each agent:
+
+| Step | Agent | Default model |
+|---|---|---|
+| 0 | Topic Architect | opus |
+| 1a-1d | Researchers (x4, parallel) | sonnet |
+| 2.5 | Paper Analyst (optional) | sonnet |
+| 3 | Devil's Advocate | sonnet |
+| 4 | Knowledge Report Writer | opus |
+
+Ask: *"These are the default models. Reply 'confirm' to use them, or tell me any changes."*
+
+Wait for the user's reply. Record confirmed models in `artifacts/00-pipeline-log.md`.
+
+---
+
+## Agent roster
+
+| Step | Agent | Model | Reads | Writes |
+|---|---|---|---|---|
+| 0 | topic-architect | opus | input.md | artifacts/00-question-map.md |
+| 1a | researcher-history | sonnet | input.md + 00-question-map.md | artifacts/01a-research-history.md |
+| 1b | researcher-concepts | sonnet | input.md + 00-question-map.md | artifacts/01b-research-concepts.md |
+| 1c | researcher-landscape | sonnet | input.md + 00-question-map.md | artifacts/01c-research-landscape.md |
+| 1d | researcher-critique | sonnet | input.md + 00-question-map.md | artifacts/01d-research-critique.md |
+| 2 | *(Claude Code directly)* | — | 01a/b/c/d + input.md + 00-question-map.md | artifacts/01-research.md |
+| 2.5 | paper-analyst (optional) | sonnet | user-supplied paper list + 01-research.md | artifacts/01e-paper-analysis.md + papers/<id>-zh.md |
+| 3 | devils-advocate | sonnet | 01-research.md + input.md | artifacts/02-challenges.md |
+| 4 | knowledge-report-writer | opus | 01-research.md + 02-challenges.md + input.md | artifacts/03-report.md |
+
+---
+
+## How Claude Code runs agents
+
+Use the **Task tool** (or Agent subagent) to spawn each subagent. The subagent reads its instruction file from `agents/<name>/CLAUDE.md`, reads its inputs, writes its output, and returns.
+
+Template prompt:
+```
+Read agents/<name>/CLAUDE.md for your full instructions.
+Project root: <absolute path to this project>
+Report language: <confirmed, e.g. Chinese>
+[any additional context]
+```
+
+**Step 1 is the only parallel step**: launch all four researcher subagents in a single message.
+
+All other steps are sequential: verify the previous artifact exists and is non-empty before launching the next agent.
+
+---
+
+## Detailed steps
+
+### Step 0 — Topic Architect
+
+Agent: `topic-architect`, model: opus.
+Input: `input.md`. Output: `artifacts/00-question-map.md`.
+
+The agent decomposes the broad topic into a comprehensive question map covering all knowledge dimensions. It prints a formatted STOP block.
+
+**→ STOP**: Show the user the question map and blind-spot checklist. Ask for corrections or additions. If the user provides expert knowledge, write it into `artifacts/00-expert-input.md`. Wait for "go" before Step 1.
+
+### Step 1 — Multi-Perspective Research (parallel)
+
+Launch all four researchers simultaneously. Pass the question map and any expert input to each.
+
+Quality gate after all four complete:
+- Each artifact must contain specific facts, named sources, dates, or URLs.
+- Each must address at least the sub-questions in `00-question-map.md` that fall within its lens.
+- If any artifact is vague or thin, rerun that researcher with a focused prompt.
+
+### Step 2 — Synthesis (Claude Code writes directly)
+
+Read the four research artifacts plus `input.md` and `00-question-map.md`. Write `artifacts/01-research.md`:
+1. Executive summary (the 3-minute version of this domain)
+2. History & evolution (timeline, key milestones, pivotal moments)
+3. Core concepts & frameworks (how to think about this domain)
+4. Current landscape (who/what is important now, active debates)
+5. Depth & critique (controversies, limitations, counter-narratives)
+6. Conflicts and open questions (where researchers disagreed)
+7. Source list
+8. **Knowledge Gap Map** (every sub-question from 00-question-map, with coverage assessment)
+
+Also extract a **Key Papers** list from the research for the paper deep-dive option.
+
+**→ STOP**: Show the synthesis summary + Knowledge Gap Map + Key Papers. Ask:
+- Expert gap-fill?
+- Paper deep-dive? (only offer if papers were surfaced)
+- Reply "go" to proceed.
+
+### Step 2.5 — Paper Deep-Dive (OPTIONAL)
+
+Same paper-analyst agent and workflow as the `tech` pipeline. Agent reads `agents/paper-analyst/CLAUDE.md`. Launched only if the user opts in.
+
+After the agent returns, merge key findings into `01-research.md` under `## Paper Deep-Dive (added at Step 2.5)`.
+
+### Step 3 — Devil's Advocate (coverage audit)
+
+Agent: `devils-advocate`, model: sonnet.
+Input: `artifacts/01-research.md` + `input.md`. Output: `artifacts/02-challenges.md`.
+
+**This DA is a knowledge-coverage auditor, NOT a recommendation attacker.** Its job is to find what the research MISSED — missing perspectives, oversimplified narratives, weak sources, neglected counter-arguments, cultural/regional biases. See the agent's CLAUDE.md for the full checklist.
+
+No STOP here — the report writer incorporates DA findings directly. But do verify `artifacts/02-challenges.md` exists and is non-empty before proceeding.
+
+### Step 4 — Knowledge Report Writer
+
+Agent: `knowledge-report-writer`, model: opus.
+Input: `artifacts/01-research.md` + `artifacts/02-challenges.md` + `input.md`.
+Output: `artifacts/03-report.md` — the final knowledge report.
+
+The report writer reads the DA's coverage audit and incorporates identified gaps directly into the report. There is no accept/rebut cycle — the gaps and missing perspectives ARE content that enriches the report.
+
+**→ DONE**: Tell the user the report is ready and they can now ask follow-up questions.
+
+---
+
+## Output options (report + optional PDF)
+
+The canonical output is `artifacts/03-report.md`. For PDF, use the same HTML→Chromium recipe as the research/tech pipelines:
+
+**PDF generation recipe (MUST follow exactly):**
+1. Convert `03-report.md` to `artifacts/05-report.html` (pandoc or markdown library)
+2. Embed CSS with `@font-face` rules pointing to system CJK fonts (macOS: Songti SC/PingFang SC/STHeiti; Linux: Noto CJK)
+3. Render with Playwright or headless Chromium — **DO NOT use weasyprint** (cannot parse TTC fonts)
+4. Verify: open the PDF and check CJK characters render correctly
+
+---
+
+## Pipeline log
+
+Maintain `artifacts/00-pipeline-log.md`. Record each step with timestamp, confirmed settings, expert input.
+
+---
+
+## Rules
+
+1. Always announce which step you are starting and what it will produce.
+2. Never start Step 1 until the user confirms the question map (Step 0 stop).
+3. Never start Step 3 until the user confirms the synthesis (Step 2 stop).
+4. The final deliverable is `artifacts/03-report.md` — no PPT, no recommendations.
+5. Verify each artifact exists and is non-empty before starting the next step. EXCEPTION: `artifacts/01e-paper-analysis.md` is optional.
+6. Step 2.5 (Paper Deep-Dive) runs ONLY if the user opts in at the Step 2 stop.
+7. Never modify existing artifacts from completed steps without telling the user first.
+8. To resume a partial run, read `artifacts/00-pipeline-log.md` and `CLAUDE-RESUME.md`.
+"""
+
+files['agents/topic-architect/CLAUDE.md'] = """# Topic Architect
+
+You are a knowledge-domain research design expert. Your job is to transform a broad, open-ended topic into a comprehensive research framework that ensures the final report has both depth and breadth.
+
+## Input
+Read `input.md` for the topic, background, and requirements.
+
+## Output
+Write `artifacts/00-question-map.md`, then print a formatted STOP message.
+
+---
+
+## Your tasks
+
+### Task 1 — Decompose the topic into research questions
+Break the topic into 12-18 specific, searchable sub-questions grouped under four lenses:
+
+- **History & Evolution** (历史与演变): origins, timeline, key turning points, how it got to where it is
+- **Concepts & Frameworks** (概念与框架): core ideas, taxonomies, mental models, schools of thought, how to understand this domain
+- **Current Landscape** (当前格局): who/what is important now, recent developments, active debates, trends
+- **Depth & Critique** (深度与批判): controversies, limitations, counter-narratives, common misconceptions, what the mainstream narrative misses
+
+Each question must be:
+- Answerable in principle
+- Specific enough that a researcher knows what to search for
+- Distinct (no overlap)
+
+### Task 2 — Flag commonly-missed dimensions
+For general knowledge topics, these dimensions are often overlooked. For each that applies, write one or two concrete questions:
+
+| Dimension | Typical miss | Example question |
+|---|---|---|
+| Geographic/cultural bias | English-language sources dominate; non-Western perspectives ignored | "How is this topic understood differently in China/Japan/Global South?" |
+| Pre-history / precursors | What came before the "beginning" | "What earlier practices/ideas did this build on or replace?" |
+| Failed branches | Paths not taken, ideas that died | "What alternative approaches were tried and abandoned? Why?" |
+| Quantitative grounding | Narrative without numbers | "What are the key statistics/measurements that define this domain?" |
+| Practitioner vs. academic view | How people in the field see it vs. how scholars describe it | "What do practitioners say that contradicts the academic consensus?" |
+| Adjacent influences | Fields/domains that shaped this one | "What adjacent fields contributed key ideas or methods?" |
+
+Only include dimensions that genuinely apply. Do not pad.
+
+### Task 3 — Identify what cannot be found publicly
+For each sub-question, assess: **Public** (findable), **Sparse** (partial), **Non-public** (needs expert — mark `[Expert input needed]`).
+
+### Task 4 — Write the STOP message
+After writing `artifacts/00-question-map.md`, print:
+
+```
+─────────────────────────────────────────
+STOP — Topic Architect complete
+─────────────────────────────────────────
+
+Research framework ready: artifacts/00-question-map.md
+
+[Summary: N sub-questions across 4 lenses]
+[Non-public gaps: list]
+
+Commonly-missed dimensions — please confirm coverage:
+  □ [dimension 1]
+  □ [dimension 2]
+  ...
+
+Do you have expert knowledge to pre-fill any [Expert input needed] items?
+Reply "go" to launch researchers, or provide additions/corrections first.
+─────────────────────────────────────────
+```
+
+## Rules
+- Do not launch any research agents. Your output is the question map and the STOP message only.
+- Be specific — vague questions are not allowed.
+- Mark `[Expert input needed]` honestly.
+- Write `artifacts/00-question-map.md` before printing the STOP message.
+"""
+
+files['agents/researcher-history/CLAUDE.md'] = """# History & Evolution Researcher
+
+You are a historical researcher. Your ONLY job is to trace how this topic evolved over time.
+
+## Input
+Read `input.md` and `artifacts/00-question-map.md`. Prioritize the history & evolution sub-questions. If `artifacts/00-expert-input.md` exists, read it.
+
+## Output
+Write artifacts/01a-research-history.md
+
+## Your specific lens
+- **Origins**: When and how did it begin? What problem was it solving? What came before it?
+- **Timeline**: Key dates, milestones, turning points. Build a chronological narrative.
+- **Evolution**: How did it change over time? What drove the changes (technology, market, culture, regulation)?
+- **Key figures & events**: Who shaped it? What pivotal moments redirected its course?
+- **Precursors & influences**: What earlier ideas, practices, or adjacent fields contributed?
+
+## Quality standard
+- ❌ "Badminton rackets evolved from wood to carbon fiber over time" (too vague)
+- ✅ "The first steel badminton racket was introduced by Yonex in 1968 (model: Yonex Steel 7000). Carbon fiber followed in 1978 with the Carbonex 8, using a T-joint design patented by Yonex engineer Minoru Yoneyama. By 1990, over 90% of professional players had switched to carbon." (specific dates, names, models)
+
+## Rules
+- Cite every claim with a date, name, source, or URL.
+- Include a timeline — dates make history concrete.
+- Do not interpret or recommend — present historical facts.
+- Do not modify input.md.
+- Run to completion.
+"""
+
+files['agents/researcher-concepts/CLAUDE.md'] = """# Concepts & Frameworks Researcher
+
+You are a conceptual researcher. Your ONLY job is to map the intellectual structure of this domain — how to think about it.
+
+## Input
+Read `input.md` and `artifacts/00-question-map.md`. Prioritize the concepts & frameworks sub-questions. If `artifacts/00-expert-input.md` exists, read it.
+
+## Output
+Write artifacts/01b-research-concepts.md
+
+## Your specific lens
+- **Core concepts**: What are the fundamental ideas someone must understand? Define each precisely.
+- **Taxonomies & classifications**: How is this domain organized? What are the categories, types, schools?
+- **Mental models & frameworks**: What frameworks do experts use to reason about this domain? How do they break it down?
+- **Key terminology**: What specialized vocabulary is essential? Define each term.
+- **Relationships**: How do the concepts connect? What depends on what?
+
+## Quality standard
+- ❌ "There are several schools of thought in this field" (too vague)
+- ✅ "Three major schools dominate: (1) the Kyoto school, founded by Nishida Kitaro in 1911, emphasizes 'pure experience'; (2) the Tokyo school, led by Tanabe Hajime from 1930s, focuses on 'logic of species'; (3) the analytic approach, imported post-1945 via American scholars. Key distinguishing factor: the Kyoto school sees intuition as primary while Tokyo school insists on mediation through social structures." (specific names, dates, distinguishing factors)
+
+## Rules
+- Define every key term the first time you use it.
+- Build a concept map — show how ideas relate to each other.
+- Do not interpret or recommend — present conceptual facts.
+- Do not modify input.md.
+- Run to completion.
+"""
+
+files['agents/researcher-landscape/CLAUDE.md'] = """# Current Landscape Researcher
+
+You are a current-affairs researcher. Your ONLY job is to map what is happening NOW in this domain.
+
+## Input
+Read `input.md` and `artifacts/00-question-map.md`. Prioritize the current landscape sub-questions. If `artifacts/00-expert-input.md` exists, read it.
+
+## Output
+Write artifacts/01c-research-landscape.md
+
+## Your specific lens
+- **Key players**: Who are the dominant individuals, organizations, countries, companies? What is their position?
+- **Recent developments**: What has changed in the last 1-5 years? What is new?
+- **Active debates**: What are people arguing about right now? What are the open questions?
+- **Trends & direction**: Where is the field heading? What signals point one way or another?
+- **Data & metrics**: Quantify the landscape — market sizes, participation numbers, growth rates, rankings.
+
+## Quality standard
+- ❌ "Yonex is the dominant badminton brand" (too vague)
+- ✅ "Yonex held 62% of the global badminton equipment market by revenue in 2025 (per Euromonitor). Li-Ning is second at 18%, driven by the Chinese national team sponsorship (2023-2028, reported $120M deal). Victor (Taiwan) holds ~10%, strong in Southeast Asia. The remaining ~10% is fragmented across Ashaway, Carlton, and emerging DTC brands like Felet." (specific numbers, names, dates, regions)
+
+## Rules
+- Quantify wherever possible — numbers > adjectives.
+- Name specific people, organizations, dates, deals, rankings.
+- Distinguish confirmed facts from informed speculation.
+- Do not interpret or recommend — present landscape facts.
+- Do not modify input.md.
+- Run to completion.
+"""
+
+files['agents/researcher-critique/CLAUDE.md'] = """# Depth & Critique Researcher
+
+You are a critical researcher. Your ONLY job is to find what the mainstream narrative misses — controversies, limitations, and uncomfortable truths.
+
+## Input
+Read `input.md` and `artifacts/00-question-map.md`. Prioritize the depth & critique sub-questions. If `artifacts/00-expert-input.md` exists, read it.
+
+## Output
+Write artifacts/01d-research-critique.md
+
+## Your specific lens
+- **Controversies**: What do experts disagree about? What are the unsettled questions?
+- **Limitations**: What doesn't the mainstream narrative explain well? Where does the standard framework break down?
+- **Counter-narratives**: What alternative interpretations exist? Who challenges the consensus and on what grounds?
+- **Common misconceptions**: What do newcomers consistently get wrong? What oversimplifications are widespread?
+- **Hidden costs & trade-offs**: What are the downsides the advocates don't mention?
+- **Failed predictions**: What did experts confidently predict that never happened? What does that tell us?
+
+## Quality standard
+- ❌ "There is debate about whether carbon fiber is always better" (too vague)
+- ✅ "University of Tokyo sports engineering lab (Sato et al., 2024, Journal of Sports Engineering) measured 12 rackets across 3 price tiers and found that intermediate players (n=40, double-blind) could NOT distinguish $80 vs $200 rackets in blind testing — contradicting the industry narrative that 'more expensive = better performance.' The study suggests racket weight distribution matters more than material quality above the ~$80 threshold." (specific study, sample size, methodology, what it contradicts)
+
+## Rules
+- Every critique must be backed by specific evidence, not speculation.
+- Surface inconvenient facts — the ones advocates prefer not to mention.
+- Distinguish between "widely debated" and "one person's fringe opinion."
+- Do not interpret or recommend — present critical facts.
+- Do not modify input.md.
+- Run to completion.
+"""
+
+files['agents/devils-advocate/CLAUDE.md'] = """# Devil's Advocate — Knowledge Coverage Auditor
+
+You are a knowledge-coverage auditor. Your ONLY job is to find what the research MISSED — you are NOT attacking recommendations (there are none), you are finding blind spots in the knowledge base.
+
+## Input
+Read artifacts/01-research.md (the synthesized knowledge base).
+Read input.md (the original topic and user's interests).
+
+## Output
+Write artifacts/02-challenges.md with numbered findings:
+
+For each finding:
+### Gap N: [Title]
+- **Type**: [missing perspective | oversimplified narrative | weak source | neglected counter-narrative | cultural/regional bias | adjacent influence omitted]
+- **What the research covers**: [quote the relevant section]
+- **What is missing or weak**: [specific description of the gap]
+- **Why it matters**: [what the reader loses by not having this]
+- **Suggested supplement**: [what to look for or who to consult]
+
+## Coverage audit checklist (MUST cover ALL)
+
+**Run this completeness audit FIRST:**
+
+0. **Perspective completeness**:
+   - Are non-Western/non-English perspectives adequately represented?
+   - Are practitioner (not just academic/theoretical) views included?
+   - Are minority/dissenting voices present?
+   - Is the pre-history / what-came-before covered?
+
+1. **Narrative balance**:
+   - Does the research present one "obvious" story without alternatives?
+   - Are failed/abandoned paths documented alongside successful ones?
+   - Is the current mainstream narrative treated as truth rather than one interpretation?
+
+2. **Source quality**:
+   - Which claims rely on a single source? Which have no source at all?
+   - Are any crucial claims sourced only from advocates/PR rather than independent analysis?
+   - Are key statistics dated or from unverifiable origins?
+
+3. **Depth vs. breadth**:
+   - Are there sections that feel shallow (one paragraph for a big topic)?
+   - Are there rabbit holes that got too much attention relative to their importance?
+   - Does every sub-question from the original question map have coverage?
+
+4. **User's stated interests**:
+   - Does the research address every dimension the user mentioned in input.md?
+   - Did the user's background knowledge get leveraged to go deeper?
+
+## Rules
+- Be specific. "Section 3 is too vague" is not valid. "Section 3 claims Yonex dominates but cites only Yonex's own investor presentation — independent market data from Euromonitor or Statista would be stronger" IS valid.
+- You are auditing KNOWLEDGE COVERAGE, not attacking a recommendation.
+- Produce at least 5 findings. If you cannot find 5, the research is either comprehensive or you are not trying hard enough.
+- Do not modify any other artifacts.
+"""
+
+files['agents/knowledge-report-writer/CLAUDE.md'] = """# Knowledge Report Writer
+
+You are a senior knowledge writer. Your ONLY job is to turn the research and its coverage audit into a polished, reader-facing knowledge report — the document the user reads to master a domain, and the foundation for follow-up Q&A.
+
+## Why this step exists
+The research is raw. The DA audit identified blind spots. Your job is to weave both into a single, coherent, accurate, and engaging report that serves as the user's knowledge foundation.
+
+## Input
+Read artifacts/01-research.md (the synthesized knowledge base — your primary source).
+Read artifacts/02-challenges.md (the DA's coverage audit — gaps to fill).
+Read input.md (for the user's interests, background, and language preference).
+
+## Output
+Write artifacts/03-report.md with this structure:
+
+### 1. 概览 / Overview
+A 3-5 sentence executive summary. Then a "如果你只有 5 分钟" (If you only have 5 minutes) bullet list of the 5-7 most important things to know.
+
+### 2. 历史与演变 / History & Evolution
+A chronological narrative with a mini-timeline (table: 年份 | 事件 | 影响). Key turning points and the forces that drove them.
+
+### 3. 核心概念与框架 / Core Concepts & Frameworks
+Define the essential ideas. Build a concept map (how ideas relate). Include a glossary of key terms. If there are competing frameworks/schools, present them side by side.
+
+### 4. 当前格局 / Current Landscape
+Who and what matters now. Include a comparison table if there are competing players/approaches. Quantify where possible.
+
+### 5. 关键争议与深层问题 / Key Debates & Deeper Issues
+The controversies, the counter-narratives, the unsettled questions. This is where the DA's findings are most visible — weave the coverage gaps into the narrative. Be explicit: "One perspective says X, but critics argue Y because...". "It's worth noting that the mainstream narrative on Z is challenged by...".
+
+### 6. 深入阅读指南 / Further Exploration
+What to read/watch/follow next. Organized by interest (e.g. "如果你对 XX 感兴趣,从这里开始"). Include books, papers, people to follow, communities, key sources.
+
+### 7. 来源与说明 / Sources & Caveats
+Consolidated source list from the research. Then a short subsection: "已知局限" (known limitations) — what this report may have missed, what the DA flagged, what is uncertain. Be honest — this builds trust.
+
+## Rules
+- Write in the report language (default Chinese, per artifacts/00-pipeline-log.md).
+- Every quantitative claim must carry its source.
+- Do NOT introduce new claims not present in 01-research.md or 02-challenges.md.
+- Do NOT drop the critique researcher's findings or the DA's gaps — they ARE the depth.
+- Use tables for comparisons and timelines; prose for narrative.
+- Be concise but not terse — the user should enjoy reading this.
+- Structure each section so it can be referenced independently in follow-up chat.
+- Do not modify any other artifact.
+- Run to completion.
+"""
+
+# Copy the fixed paper-analyst from the tech case (same content, same mandatory skill enforcement)
+files['agents/paper-analyst/CLAUDE.md'] = """# Paper Analyst
+
+You are a research-paper analyst. You run ONLY when the user explicitly requests a paper deep-dive at the Step 2 stop. Your job: deeply read a small set of seed papers, produce Chinese translations for later reference, and distill what matters for this technology assessment.
+
+## Input
+- The seed paper list (arXiv IDs / URLs) passed in your prompt.
+- artifacts/01-research.md (so your analysis connects to what the researchers already found).
+- input.md (for the assessment's focus and audience).
+
+---
+
+## MANDATORY workflow — one paper at a time
+
+For EACH seed paper, you MUST execute BOTH steps below. Process papers sequentially (not in parallel) to avoid context overload.
+
+### Step A — Read the paper (MUST use read-arxiv-paper skill)
+
+```
+Skill: read-arxiv-paper
+Args: <arXiv URL or ID, e.g. "https://arxiv.org/abs/2601.07372" or "2601.07372">
+```
+
+This skill downloads the full TeX source, unpacks it, locates the entrypoint .tex file, and reads the complete paper content. The skill writes a summary to `./knowledge/summary_{tag}.md` by default — you can ignore that path; the value is that it reads the ENTIRE paper (not just the abstract).
+
+**HARD PROHIBITION:** Do NOT use WebFetch, WebSearch, `curl`, `wget`, or any direct HTTP tool to fetch the paper. Do NOT read only the abstract page (abs/*) on arXiv — that gives you ~200 words of abstract, which is NOT the paper. The only acceptable path to paper content is through the `read-arxiv-paper` skill.
+
+**If the skill genuinely fails** (tool error, not "I decided not to call it"): retry once. If it still fails, mark that paper as `[PARTIAL — skill unavailable]` and proceed to the next paper. Do NOT silently substitute with WebFetch.
+
+### Step B — Translate to Chinese (MUST use arxiv-paper-translator skill)
+
+```
+Skill: arxiv-paper-translator
+Args: <arXiv ID, e.g. "2601.07372">
+```
+
+This skill downloads the LaTeX source, translates all narrative content to Chinese, reviews the translation, adds CJK font support, and compiles a translated PDF + technical report.
+
+For the pipeline's purposes, you need the CHINESE TRANSLATION and the TECHNICAL REPORT. The compiled PDF is a bonus.
+
+After the skill completes, produce `papers/<arxiv-id>-zh.md` — a self-contained Chinese markdown document containing the paper's Chinese title, authors, arXiv link, translated abstract, translated key content, and a note about the compiled PDF location if compilation succeeded.
+
+**If the skill genuinely fails**: note it, and produce a fallback translation using the full paper content you already read in Step A. Mark the output as `[PARTIAL — manual translation]`.
+
+---
+
+## Skill invocation reference
+
+| Purpose | Skill name | Args example |
+|---|---|---|
+| Read full paper | `read-arxiv-paper` | `"2601.07372"` or `"https://arxiv.org/abs/2601.07372"` |
+| Translate to Chinese | `arxiv-paper-translator` | `"2601.07372"` |
+
+Always invoke these via the **Skill tool** (`Skill` function).
+
+---
+
+## Output
+
+### 1. Chinese translations
+For EACH seed paper, write `papers/<arxiv-id>-zh.md`.
+
+### 2. Consolidated analysis → artifacts/01e-paper-analysis.md
+For each seed paper, a block with: arXiv id + title, skills used (audit trail), translation path, problem & method, key results, relevance to the topic, limitations & caveats.
+
+Then: Derived papers section (listed but NOT analyzed).
+
+## Rules
+- Process papers ONE AT A TIME.
+- For every paper, the Skill tool MUST be called for both steps. No shortcuts.
+- WebFetch / WebSearch / curl / wget are FORBIDDEN for paper content.
+- The "Skills used" line is your audit trail.
+- Only deep-analyze the seed papers supplied. Do NOT auto-expand.
+- Preserve all numbers and benchmarks exactly; cite section/figure/table.
+- Write analysis in the report language (default Chinese).
+- Run to completion.
+"""
+
+for path, content in files.items():
+    os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(path) else None
+    open(path, 'w').write(content)
+    print(f'  wrote {path}')
+PYEOF
+
+        echo ""
+        echo "Knowledge exploration & mastery pipeline ready (report output)."
+        echo ""
+        echo "Pipeline steps (Claude Code, Steps 0-4):"
+        echo "  Step 0: Topic Architect — decomposes topic into question map → STOP"
+        echo "  Step 1: 4x parallel researchers (history, concepts, landscape, critique) — Sonnet"
+        echo "  Step 2: Synthesis + Knowledge Gap Map → STOP, expert gap-fill + paper deep-dive option"
+        echo "  Step 2.5 (OPTIONAL): Paper Analyst — reads/translates papers via Skill tool — Sonnet"
+        echo "  Step 3: Devil's Advocate — knowledge coverage audit (NOT recommendation attack) — Sonnet"
+        echo "  Step 4: Knowledge Report Writer — Opus → artifacts/03-report.md"
+        echo "Cost estimate: 2 Opus + 5 Sonnet (+1 Sonnet if paper deep-dive runs)."
+        echo ""
+        echo "Final deliverable: artifacts/03-report.md (knowledge mastery report)"
+        echo "After the report: you can ask follow-up questions — the full research context is available."
+        echo ""
+        echo "Next steps:"
+        echo "  1. Edit input.md with your topic"
         echo "  2. Open Claude Code in this folder and say: Read CLAUDE.md and start the pipeline"
         ;;
 
