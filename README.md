@@ -1,7 +1,7 @@
 # Team Original
 
 Multi-agent team pipeline scaffolds for bootstrapping AI-assisted
-workflows. One script, five pipelines — each generates a full directory
+workflows. One script, six pipelines — each generates a full directory
 of agent instructions, artifact templates, and orchestration guides
 tailored to a different goal.
 
@@ -14,6 +14,7 @@ tailored to a different goal.
 | `./init-pipeline.sh study` | Learning guide builder |
 | `./init-pipeline.sh coding` | Open source codebase deep analysis |
 | `./init-pipeline.sh tech` | Technology assessment research |
+| `./init-pipeline.sh explore` | Knowledge exploration & mastery |
 
 ### research
 
@@ -83,22 +84,46 @@ any open source project.
 ```text
 Step 0: Tech Question Architect  →  Research framework design
            ↓
-Step 1: 4× Parallel Researchers  (technical · market · risk · architectural)
+Step 1: 4× Parallel Researchers  (leadership · competitive · trend · challenges)
            ↓
 Step 2: Synthesis + Knowledge Gap Map
-           ↓
+           ↓   (optional paper / repo deep-dives)
 Step 3: Analyst (first pass)
            ↓
 Step 4: Devil's Advocate + Completeness Audit
            ↓
 Step 5: Analyst (revision)
            ↓
-Step 6: Report Writer  →  artifacts/03-report.md
+Step 6: Report Writer  →  artifacts/03-report.md (canonical report)
+           ↓
+Step 7: Output Selection  →  Markdown (always) / PDF / PPTX (Cowork)
 ```
 
-Technology assessment pipeline focused on producing a technical report
-(Markdown/PDF) rather than a PPT deck. Four research lenses cover
-technical depth, market landscape, risk analysis, and architectural fit.
+Technology assessment pipeline producing a canonical report and
+optional PDF / PPTX outputs. Four research lenses cover technical
+leadership & maturity, competitive landscape, trend outlook, and key
+difficulties. Optional paper deep-dive (arXiv) and GitHub repo analysis.
+
+### explore
+
+```text
+Step 0: Topic Architect  →  Comprehensive question map
+           ↓
+Step 1: 4× Parallel Researchers  (history · concepts · landscape · critique)
+           ↓
+Step 2: Synthesis + Knowledge Gap Map
+           ↓   (optional paper deep-dive)
+Step 3: Devil's Advocate  →  Knowledge COVERAGE audit (not recommendation attack)
+           ↓
+Step 4: Knowledge Report Writer  →  artifacts/03-report.md
+```
+
+General-purpose knowledge exploration pipeline for any topic. Produces a
+deep, broad, accurate knowledge report designed for reading + follow-up
+Q&A — no recommendations, no PPT. The Devil's Advocate is repurposed as
+a coverage auditor (missing perspectives, oversimplifications, weak
+sources, cultural biases) rather than a recommendation attacker.
+Domain-agnostic research lenses work for any subject.
 
 ## Quick Start
 
@@ -135,12 +160,13 @@ After running `init-pipeline.sh`, the generated project will contain:
 .
 ├── CLAUDE.md                 # Orchestration guide
 ├── CLAUDE-RESUME.md          # Resume point if interrupted
-├── COWORK.md                 # Cowork build guide (research)
+├── COWORK.md                 # PPT build guide (research, tech)
 ├── input.md                  # Your project brief
-├── input/                    # Source materials (pdf/ web/ repo/)
 ├── agents/                   # Agent instruction files
 ├── artifacts/                # Intermediate and final outputs
+│   └── 03-report.md          # Canonical report (tech, explore)
 ├── output/                   # Final deliverables (study)
+├── papers/                   # Paper translations (tech, explore)
 └── diagrams/                 # Diagram specs and outputs (research)
 ```
 
