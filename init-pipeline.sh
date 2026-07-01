@@ -4637,18 +4637,22 @@ Write `artifacts/03-report-illustrated.md` — a copy of the text report with im
 
 Use HTML `<img>` tags (not Markdown `![]()`) to control width. Use percentage-based widths for responsiveness — the PDF renderer will scale them correctly. Never use raw Markdown image syntax — always use `<img>` with explicit `width="XX%"`.
 
-**Embed format:**
+**Embed format (ALL images must be centered):**
 
-**For search images (MUST include clickable source URL):**
+**For search images:**
 ```html
+<div align="center">
 <img src="images/<NN>-<slug>.jpg" width="70%">
-*▲ Caption: one line describing the image. Source: [Source Name](https://original-source-url.com/page)*
+*▲ Caption: one line describing the image. 来源：[Source Name](https://original-source-url.com/page)*
+</div>
 ```
 
 **For AI-generated images:**
 ```html
+<div align="center">
 <img src="images/<NN>-<slug>.png" width="80%">
-*▲ Caption: one line describing the image. AI-generated via [Gemini/GPT Image 2]*
+*▲ Caption: one line describing the image. AI 生成 via [Gemini/GPT Image 2]*
+</div>
 ```
 
 ## Output
@@ -4659,7 +4663,7 @@ Use HTML `<img>` tags (not Markdown `![]()`) to control width. Use percentage-ba
 - **Phase 0 is MANDATORY**: always generate one hero image. This is in addition to the 5-8 content images.
 - Total images: 1 hero + 5-8 content = 6-9. Do not over-illustrate.
 - ~70% real photos (search), ~30% AI diagrams (generate). Never generate what can be photographed.
-- **Image sizing**: use HTML `<img width="XX%">` tags with percentage widths (hero: 100%, full-width: 90-95%, inline: 60-80%, detail: 40-60%). Never use raw Markdown `![]()` — always `<img>` with explicit width.
+- **Image sizing**: use HTML `<img width="XX%">` tags with percentage widths (hero: 100%, full-width: 90-95%, inline: 60-80%, detail: 40-60%). **All images MUST be centered** — wrap each `<img>` in a `<div align="center">` block. Never use raw Markdown `![]()` — always `<div align="center"><img ...></div>` with explicit width.
 - For AI generation: invoke `ai-image-generator` skill first, then use its framework and API patterns. Gemini for concept diagrams without text; GPT Image 2 for anything with readable labels.
 - Search sources MUST be Wikipedia, Wikimedia Commons, official brand/site pages, museum collections, or well-known authoritative blogs. Reject stock photo sites, random social media, Pinterest, or unverifiable sources.
 - **MANDATORY: For every search image, record and publish the original source URL.** The URL must be: (a) stored in the image spec, (b) included as a clickable markdown link in the caption, and (c) preserved in the PDF output. This is the audit trail — without it, the image provenance is unverifiable.
