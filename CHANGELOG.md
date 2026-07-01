@@ -4,6 +4,55 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-01] — Tech Pipeline Orchestrator Fix
+
+**Commit**: `f49b576`
+
+### Fixed (Tech Pipeline Orchestrator)
+
+- Orchestrator `CLAUDE.md` referenced non-existent agents
+  (`researcher-technical`/`market`/`risk`/`architectural`, generic `analyst`)
+  instead of the actual generated agents
+  (`researcher-leadership`/`competitive`/`trend`/`challenges`, `tech-analyst`) —
+  the pipeline would fail at Step 1 and at Steps 3-5
+- `paper-analyst` and `repo-analyst` were generated but never referenced in the
+  orchestrator's step flow — wired in as optional Steps 2.5/2.6, gated behind
+  the Step 2 STOP
+- Orchestrator claimed "No PPTX output for tech pipeline" despite
+  `narrative-architect`, `COWORK.md`, and `docs/STEP7-GUIDE.md` already
+  supporting a PPTX build via Cowork — added Step 7 to the pipeline overview,
+  agent roster, model confirmation table, and rules, matching the research
+  pipeline's pattern
+- Added `artifacts/04-narrative.md` / `artifacts/04-diagram-specs.md`
+  placeholders and `agents/narrative-architect` scaffolding to match
+
+---
+
+## [2026-06-29] — Knowledge Exploration Pipeline
+
+**Commits**: `8ac5cde`, `0ee2288`
+
+### Added (Explore Pipeline)
+
+- New `explore` pipeline (`./init-pipeline.sh explore`) — general-purpose
+  knowledge mastery pipeline for any topic
+- Topic Architect → 4-lens parallel research (history, concepts, landscape,
+  critique) → synthesis → optional paper deep-dive → Devil's Advocate
+  (repurposed as a knowledge-coverage auditor, not a recommendation attacker)
+  → Knowledge Report Writer
+- Output: `artifacts/03-report.md` — text report only, no PPT, no
+  recommendations
+- README and root `CLAUDE.md` updated for the sixth pipeline and modification
+  conventions
+
+### Fixed (Documentation)
+
+- This addition was never logged in `CHANGELOG.md` at merge time (PR #11),
+  despite the project's own rule requiring every functional commit/PR to
+  update it — backfilled here
+
+---
+
 ## [2026-06-12] — Output Type + 4 Presentation Styles
 
 **Commit**: `310ba58`
