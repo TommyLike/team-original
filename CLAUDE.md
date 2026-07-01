@@ -105,10 +105,12 @@ When two or more pipelines use the same agent or output recipe:
 - `ensure_fonts()` (top of `init-pipeline.sh`) installs the default fonts on
   every run: **Source Han Serif SC** (CJK) + **Source Serif 4** (Latin). It is
   idempotent and never aborts scaffolding on failure.
-- `install_richtext_assets()` copies `assets/brand/rights.template.md` and
-  generates `docs/STORYTELLING-REFERENCE.md` (pointing at the absolute
-  `assets/articles/boss_dai` path) into each project. Call it from any new
-  pipeline that produces PDF/PPTX/Word output.
+- `install_richtext_assets()` copies `assets/brand/rights.template.md`, copies the
+  full boss_dai corpus (style guide + ~530 articles) into `docs/boss_dai/`, and
+  generates `docs/STORYTELLING-REFERENCE.md` (project-relative paths only). The
+  corpus is bundled so the generated project is self-contained and does not depend
+  on the team-original repo's absolute path. Call it from any new pipeline that
+  produces PDF/PPTX/Word output.
 - Both helpers rely on `SCRIPT_DIR`/`ASSETS_DIR` to locate `assets/` regardless
   of the current working directory.
 

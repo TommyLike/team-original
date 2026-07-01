@@ -88,18 +88,28 @@ install_richtext_assets() {
     if [ -f "$brand_src" ]; then
         cp -f "$brand_src" docs/rights.template.md 2>/dev/null || echo "  [assets] warn: rights template copy failed"
     fi
-    cat > docs/STORYTELLING-REFERENCE.md << STORYEOF
+    # Copy the storytelling corpus + style guide INTO the project so it is fully
+    # self-contained — it works no matter where the project is later run, and does
+    # not depend on the team-original repo staying at any absolute path.
+    if [ -d "$boss_dai_dir" ]; then
+        rm -rf docs/boss_dai
+        cp -R "$boss_dai_dir" docs/boss_dai 2>/dev/null || echo "  [assets] warn: storytelling corpus copy failed"
+    fi
+    cat > docs/STORYTELLING-REFERENCE.md << 'STORYEOF'
 # Storytelling Reference — 饭桶戴老板 voice
 
 当某个富文本输出（尤其是 PDF）需要**有故事性 / 叙事笔调**时，按下面流程借鉴戴老板的笔法。
 **只借语感与结构，绝不借事实**——数据与事实以本项目研究为准。
 
+## 内置参考库（已随项目附带，直接读取，无需询问用户来源）
+- 笔法指南：`docs/boss_dai/dai-writing-style.md`
+- 原文语料：`docs/boss_dai/`（约 530 篇公众号原文，随项目自带）
+
 ## 步骤（务必按顺序）
-1. **先读笔法指南**：\`$boss_dai_dir/dai-writing-style.md\`（固定参考，与语料同目录）。
-2. **通读 5 篇原文**（以降低随机性）。原文语料在：
-   \`$boss_dai_dir\`
+1. **先读笔法指南** `docs/boss_dai/dai-writing-style.md`，建立整体认知。
+2. **从 `docs/boss_dai/` 通读 5 篇原文**（以降低随机性）：
    - 优先挑与本报告**题材相近**的篇目（商业 / 科技 / 历史 / 地缘 / 人物）。
-   - 跳过文件名带「转」的转载篇，以及 \`dai-writing-style.md\` 本身（那是指南不是原文）。
+   - 跳过文件名带「转」的转载篇，以及 `dai-writing-style.md` 本身（那是指南不是原文）。
 3. **先整理、后动笔**：读完后先针对本报告主题写一段「笔法应用要点」
    （开头怎么起、贯穿全文的核心设问、用哪个历史类比、结尾升华到什么），再写正文叙事段落。
 4. **只用于叙事段落**：数据表、方法论、结论清单仍用中性、精确的表达。
@@ -413,7 +423,7 @@ Convert `03-report.md` → HTML → PDF via headless Chromium. **Do NOT use weas
 2. Embed a CSS font stack (these fonts are installed system-wide by init-pipeline.sh):
    - CJK: `'Source Han Serif SC', 'Source Han Serif SC VF', 'PingFang SC', 'Noto Sans CJK SC', serif`
    - Latin: `'Source Serif 4', Georgia, serif`
-3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md` — read the distilled style guide it points to, then read 5 topic-matched source articles, draft style-application notes, and only then write the narrative sections. Keep all facts and numbers exact.
+3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md`. The style guide and article corpus are bundled in `docs/boss_dai/` — read them directly, do NOT ask the user where to get reference articles. Read the guide, then 5 topic-matched articles, draft style-application notes, then write the narrative sections. Keep all facts and numbers exact.
 4. Rights footer on every page: render `docs/rights.template.md` as a fixed running footer, replacing the `<#...>` placeholder with the model names actually used this run (from the agent→model rows in `artifacts/00-pipeline-log.md`, e.g. `Claude Opus 4.8, Claude Sonnet 4.6`).
 5. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf` (or headless Chromium `--print-to-pdf`).
 6. Verify: no tofu □ boxes, table borders intact, rights footer visible on every page.
@@ -3284,7 +3294,7 @@ Convert `03-report.md` → HTML → PDF via headless Chromium. **Do NOT use weas
 2. Embed a CSS font stack (these fonts are installed system-wide by init-pipeline.sh):
    - CJK: `'Source Han Serif SC', 'Source Han Serif SC VF', 'PingFang SC', 'Noto Sans CJK SC', serif`
    - Latin: `'Source Serif 4', Georgia, serif`
-3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md` — read the distilled style guide it points to, then read 5 topic-matched source articles, draft style-application notes, and only then write the narrative sections. Keep all facts and numbers exact.
+3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md`. The style guide and article corpus are bundled in `docs/boss_dai/` — read them directly, do NOT ask the user where to get reference articles. Read the guide, then 5 topic-matched articles, draft style-application notes, then write the narrative sections. Keep all facts and numbers exact.
 4. Rights footer on every page: render `docs/rights.template.md` as a fixed running footer, replacing the `<#...>` placeholder with the model names actually used this run (from the agent→model rows in `artifacts/00-pipeline-log.md`, e.g. `Claude Opus 4.8, Claude Sonnet 4.6`).
 5. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf` (or headless Chromium `--print-to-pdf`).
 6. Verify: no tofu □ boxes, table borders intact, rights footer visible on every page.
@@ -4200,7 +4210,7 @@ Convert `03-report.md` → HTML → PDF via headless Chromium. **Do NOT use weas
 2. Embed a CSS font stack (these fonts are installed system-wide by init-pipeline.sh):
    - CJK: `'Source Han Serif SC', 'Source Han Serif SC VF', 'PingFang SC', 'Noto Sans CJK SC', serif`
    - Latin: `'Source Serif 4', Georgia, serif`
-3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md` — read the distilled style guide it points to, then read 5 topic-matched source articles, draft style-application notes, and only then write the narrative sections. Keep all facts and numbers exact.
+3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md`. The style guide and article corpus are bundled in `docs/boss_dai/` — read them directly, do NOT ask the user where to get reference articles. Read the guide, then 5 topic-matched articles, draft style-application notes, then write the narrative sections. Keep all facts and numbers exact.
 4. Rights footer on every page: render `docs/rights.template.md` as a fixed running footer, replacing the `<#...>` placeholder with the model names actually used this run (from the agent→model rows in `artifacts/00-pipeline-log.md`, e.g. `Claude Opus 4.8, Claude Sonnet 4.6`).
 5. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf` (or headless Chromium `--print-to-pdf`).
 6. Verify: no tofu □ boxes, table borders intact, rights footer visible on every page.

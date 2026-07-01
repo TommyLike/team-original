@@ -17,14 +17,16 @@ All notable changes to the `team-original` project.
   locate its own `assets/`.
 - **Per-project brand + storytelling assets**: new `install_richtext_assets()`
   helper (called by `research`, `tech`, `explore`) copies
-  `assets/brand/rights.template.md` → `docs/rights.template.md` and generates
-  `docs/STORYTELLING-REFERENCE.md`, which points at the absolute
-  `assets/articles/boss_dai` corpus path (read on demand — not copied).
-- **Distilled 戴老板 writing-style guide** (`assets/articles/boss_dai/dai-writing-style.md`):
-  a new fixed reference — living alongside the corpus and referenced by absolute
-  path — covering the 起承转合 structure, argument tactics, language register,
-  and things to avoid, extracted from the original corpus so storytelling output
-  no longer depends on a small random sample.
+  `assets/brand/rights.template.md` → `docs/rights.template.md`, copies the entire
+  boss_dai corpus (style guide + ~530 articles) → `docs/boss_dai/`, and generates
+  `docs/STORYTELLING-REFERENCE.md`. The corpus is **bundled into each project**
+  so it is fully self-contained and works when run from any directory (no
+  dependency on the team-original repo's absolute path).
+- **Distilled 戴老板 writing-style guide** (`docs/boss_dai/dai-writing-style.md`,
+  sourced from `assets/articles/boss_dai/`): a new fixed reference covering the
+  起承转合 structure, argument tactics, language register, and things to avoid,
+  extracted from the original corpus so storytelling output no longer depends
+  on a small random sample.
 - **Storytelling flow hardened**: instead of "skim 2–3 articles," the
   reference now requires reading the fixed style guide first, then **5**
   topic-matched articles, then drafting style-application notes before
