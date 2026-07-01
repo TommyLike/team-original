@@ -4,6 +4,45 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-01] — Rights Footer Enforcement & AI Image Language Fix
+
+### Fixed (rights footer skipped during PDF/PPT generation)
+
+- **PDF recipe** (research / tech / explore): step 4 changed from descriptive
+  ("Rights footer on every page: render...") to mandatory ("**MUST** include rights
+  footer... This step is mandatory — do NOT skip."). Step 6 verification also
+  hardened with explicit MUST language and a per-item checklist.
+- **STEP7-GUIDE.md** (research / tech): added "Rights footer visible on every slide"
+  to the Stage D Review Checklist so the PPT-building agent checks it during the
+  review gate. Design Rules rights footer note upgraded to "**Rights footer (MUST)**"
+  with mandatory language.
+- **COWORK.md** (research / tech): added rule 8 — "Rights footer (MUST)" — making
+  rights footer verification a mandatory rule the Cowork agent must follow before
+  final approval.
+
+Root cause: the rights footer instruction was a narrative description without
+"MUST" language, was absent from the Stage D Review Checklist (the definitive
+"done" gate), and was absent from COWORK.md entirely. Agents treated it as
+optional and skipped it.
+
+### Fixed (AI-generated images in English despite Chinese reports)
+
+- **visual-enhancer agent**: added instruction to read `artifact-language` from
+  `artifacts/00-pipeline-log.md`. All AI image prompts MUST use labels matching
+  the report language. The 5-part prompt framework now uses a parameterized
+  `{artifact-language from pipeline log}` placeholder instead of hardcoded
+  "Chinese labels". Example prompt annotated with language-matching instruction.
+- **narrative-architect agent** (research / tech): added "Language (MUST)" directive
+  for diagram specs — all diagram labels, annotations, and text MUST match the slide
+  language from pipeline log. Never default to English for Chinese decks.
+
+Root cause: both agents hardcoded "Chinese labels" in their prompt construction
+guidance but never read the pipeline log to know the actual target language. When
+the report was Chinese, generated images often came out in English because the
+prompts didn't enforce language.
+
+---
+
 ## [2026-07-01] — Default Fonts, Brand Rights Footer & Storytelling Reference
 
 ### Added (`init-pipeline.sh`)
