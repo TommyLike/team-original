@@ -1,0 +1,7 @@
+{
+  // Vendored rich-text assets (fonts license readmes, storytelling corpus,
+  // brand templates) are not repo documentation — exclude from markdown linting.
+  "ignores": [
+    "assets/**"
+  ]
+}

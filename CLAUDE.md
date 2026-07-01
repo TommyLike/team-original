@@ -93,9 +93,24 @@ When two or more pipelines use the same agent or output recipe:
   When fixing a bug in one copy, fix ALL copies.
 - **PDF generation recipe**: the HTML→Chromium recipe in the Step 7
   output gate must stay identical across `research`, `tech`, and `explore`.
+  It bakes in the default font stack (Source Han Serif SC / Source Serif 4),
+  the opt-in storytelling-tone step, and the rights-footer step — keep all
+  three copies in sync.
 - **COWORK.md / STEP7-GUIDE.md**: shared between `research` and `tech`.
   When adding to a new case, copy from an existing case and update only
   artifact name references (e.g. `03-narrative.md` → `04-narrative.md`).
+
+### Rich-text assets (`assets/`)
+
+- `ensure_fonts()` (top of `init-pipeline.sh`) installs the default fonts on
+  every run: **Source Han Serif SC** (CJK) + **Source Serif 4** (Latin). It is
+  idempotent and never aborts scaffolding on failure.
+- `install_richtext_assets()` copies `assets/brand/rights.template.md` and
+  generates `docs/STORYTELLING-REFERENCE.md` (pointing at the absolute
+  `assets/articles/boss_dai` path) into each project. Call it from any new
+  pipeline that produces PDF/PPTX/Word output.
+- Both helpers rely on `SCRIPT_DIR`/`ASSETS_DIR` to locate `assets/` regardless
+  of the current working directory.
 
 ### Known design debt
 
