@@ -150,7 +150,7 @@ Domain-agnostic research lenses work for any subject.
 ├── assets/                   # Fonts + brand + storytelling source (see below)
 │   ├── fonts/                # Source Han Serif SC (CJK) + Source Serif 4 (Latin)
 │   ├── brand/                # rights.template.md — footer declaration template
-│   └── articles/boss_dai/    # Storytelling-tone reference corpus
+│   └── articles/boss_dai/    # Storytelling corpus + dai-writing-style.md guide
 ├── .github/workflows/ci.yml  # CI: shellcheck + markdownlint
 ├── CLAUDE.md                 # AI assistant guide
 ├── README.md
@@ -165,7 +165,10 @@ Running `init-pipeline.sh` (any pipeline) installs the default rich-text fonts �
 directory if they are not already present. All PDF/PPTX output defaults to these
 fonts. The `research`, `tech`, and `explore` pipelines also drop a brand rights
 footer template (`docs/rights.template.md`) and a storytelling-tone reference
-(`docs/STORYTELLING-REFERENCE.md`) into each generated project.
+(`docs/STORYTELLING-REFERENCE.md`) into each generated project. For narrative-tone
+reports, that reference points to a distilled writing-style guide
+(`assets/articles/boss_dai/dai-writing-style.md`) and the boss_dai corpus, telling
+the pipeline to read the guide plus 5 topic-matched articles before drafting.
 
 After running `init-pipeline.sh`, the generated project will contain:
 
