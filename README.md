@@ -166,9 +166,10 @@ directory if they are not already present. All PDF/PPTX output defaults to these
 fonts. The `research`, `tech`, and `explore` pipelines also drop a brand rights
 footer template (`docs/rights.template.md`) and a storytelling-tone reference
 (`docs/STORYTELLING-REFERENCE.md`) into each generated project. For narrative-tone
-reports, that reference points to a distilled writing-style guide
-(`assets/articles/boss_dai/dai-writing-style.md`) and the boss_dai corpus, telling
-the pipeline to read the guide plus 5 topic-matched articles before drafting.
+reports, the full boss_dai corpus — a distilled writing-style guide plus ~530
+articles — is **copied into `docs/boss_dai/`** so each project is self-contained
+and works from any directory; the pipeline reads the guide plus 5 topic-matched
+articles before drafting.
 
 After running `init-pipeline.sh`, the generated project will contain:
 
