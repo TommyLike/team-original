@@ -4,6 +4,47 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-01] — Default Fonts, Brand Rights Footer & Storytelling Reference
+
+### Added (`init-pipeline.sh`)
+
+- **Default rich-text fonts**: new `ensure_fonts()` helper runs on every invocation
+  (before the pipeline `case`). It installs **Source Han Serif SC** (CJK) and
+  **Source Serif 4** (Latin) from `assets/fonts/` into the user font dir
+  (`~/Library/Fonts` on macOS, `~/.local/share/fonts` on Linux) when missing,
+  runs `fc-cache` if available, and is idempotent. Failures warn and never abort
+  scaffolding. Requires `SCRIPT_DIR`/`ASSETS_DIR` (also added) so the script can
+  locate its own `assets/`.
+- **Per-project brand + storytelling assets**: new `install_richtext_assets()`
+  helper (called by `research`, `tech`, `explore`) copies
+  `assets/brand/rights.template.md` → `docs/rights.template.md` and generates
+  `docs/STORYTELLING-REFERENCE.md`, which points at the absolute
+  `assets/articles/boss_dai` corpus path (read on demand — not copied).
+- **Distilled 戴老板 writing-style guide** (`assets/articles/boss_dai/dai-writing-style.md`):
+  a new fixed reference — living alongside the corpus and referenced by absolute
+  path — covering the 起承转合 structure, argument tactics, language register,
+  and things to avoid, extracted from the original corpus so storytelling output
+  no longer depends on a small random sample.
+- **Storytelling flow hardened**: instead of "skim 2–3 articles," the
+  reference now requires reading the fixed style guide first, then **5**
+  topic-matched articles, then drafting style-application notes before
+  writing — reducing output variance.
+
+### Changed (rich-text output recipes)
+
+- The shared **PDF generation recipe** (research / tech / explore, now identical)
+  defaults to the CJK stack `'Source Han Serif SC', 'Source Han Serif SC VF',
+  'PingFang SC', 'Noto Sans CJK SC'` and Latin `'Source Serif 4'`, adds an
+  opt-in storytelling-tone step (饭桶戴老板 voice via `docs/STORYTELLING-REFERENCE.md`),
+  and a rights footer step (render `docs/rights.template.md` with the run's actual
+  model names into a running page footer).
+- **PPT build guide** (`docs/STEP7-GUIDE.md`, research + tech copies): design-rules
+  CJK font changed from Microsoft YaHei to **Source Han Serif SC**, added
+  **Source Serif 4** as the Latin body font (applied via `theme1.xml` fontScheme),
+  and added a rights-footer note.
+
+---
+
 ## [2026-07-01] — Tech Pipeline Orchestrator Fix
 
 **Commit**: `f49b576`
