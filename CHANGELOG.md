@@ -4,6 +4,42 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-01] — Image Caption Typography + Scaffold Generation Fix
+
+### Fixed (broken scaffold generation — research/tech pipelines could not be created)
+
+- The previous "Rights Footer Enforcement & AI Image Language Fix" changes inserted new
+  lines into **single-quoted** Python strings using literal newlines. A Python
+  single-quoted `'...'` string cannot span physical lines, so `./init-pipeline.sh research`
+  and `./init-pipeline.sh tech` aborted with `SyntaxError: unterminated string literal`
+  and generated **no orchestrator `CLAUDE.md` and no agent files**. Three insertions were
+  affected: `narrative-architect` (research copy), `COWORK.md` rule 8 (research + tech),
+  and the `STEP7-GUIDE.md` Stage D checklist item (research + tech). All are now rejoined
+  onto a single physical line with literal `\n` escapes.
+- CI never caught this because it only lints (`shellcheck` + `markdownlint`) and never
+  executes the generator. Verified the fix by running `./init-pipeline.sh` for research,
+  tech, and explore — all now exit 0 and emit a complete project.
+
+### Added (caption / figure typography for PDF output)
+
+- **PDF recipe** (research / tech / explore): step 2 now prescribes image-caption
+  typography — captions render lighter (`font-weight: 300`), italic, and slightly
+  smaller (`0.85em`) than body text, while figure/section titles stay bold
+  (`h1..h4 { font-weight: 700 }`). CSS selector covers `figure figcaption`,
+  `.fig-caption`, and `p > em:only-child` so the existing `*…*` markdown captions
+  are styled automatically.
+- **visual-enhancer agent**: added a "Caption styling" rule instructing captions to
+  stay wrapped in a single `*…*` emphasis (never bold, never body size) so they pick
+  up the PDF recipe's caption CSS.
+
+Root cause: the PDF recipe specified a font stack but gave no typographic guidance,
+so captions rendered at body weight/size. The bold, light, and italic Source Serif 4
+weights were already installed (`ensure_fonts` copies the full OTF set); CJK light
+weight comes from the Source Han Serif variable weight axis (no true italic — Chromium
+synthesizes an oblique slant). The gap was documentation/CSS, not font availability.
+
+---
+
 ## [2026-07-01] — Rights Footer Enforcement & AI Image Language Fix
 
 ### Fixed (rights footer skipped during PDF/PPT generation)
