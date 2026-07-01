@@ -4173,7 +4173,7 @@ Write artifacts/01a-research-history.md
 - ✅ "The first steel badminton racket was introduced by Yonex in 1968 (model: Yonex Steel 7000). Carbon fiber followed in 1978 with the Carbonex 8, using a T-joint design patented by Yonex engineer Minoru Yoneyama. By 1990, over 90% of professional players had switched to carbon." (specific dates, names, models)
 
 ## Rules
-- Cite every claim with a date, name, source, or URL.
+- Cite every claim with a date, name, source, AND URL. Never name a source without providing its URL — a source without a link is unverifiable.
 - Include a timeline — dates make history concrete.
 - Do not interpret or recommend — present historical facts.
 - Do not modify input.md.
@@ -4204,6 +4204,7 @@ Write artifacts/01b-research-concepts.md
 ## Rules
 - Define every key term the first time you use it.
 - Build a concept map — show how ideas relate to each other.
+- Cite every definition, taxonomy, or framework with its source AND URL. If a concept comes from a specific author, paper, or reference, include the link.
 - Do not interpret or recommend — present conceptual facts.
 - Do not modify input.md.
 - Run to completion.
@@ -4233,6 +4234,7 @@ Write artifacts/01c-research-landscape.md
 ## Rules
 - Quantify wherever possible — numbers > adjectives.
 - Name specific people, organizations, dates, deals, rankings.
+- Cite every fact with its source AND URL. Market data, brand info, trend reports — always include the link.
 - Distinguish confirmed facts from informed speculation.
 - Do not interpret or recommend — present landscape facts.
 - Do not modify input.md.
@@ -4262,7 +4264,7 @@ Write artifacts/01d-research-critique.md
 - ✅ "University of Tokyo sports engineering lab (Sato et al., 2024, Journal of Sports Engineering) measured 12 rackets across 3 price tiers and found that intermediate players (n=40, double-blind) could NOT distinguish $80 vs $200 rackets in blind testing — contradicting the industry narrative that 'more expensive = better performance.' The study suggests racket weight distribution matters more than material quality above the ~$80 threshold." (specific study, sample size, methodology, what it contradicts)
 
 ## Rules
-- Every critique must be backed by specific evidence, not speculation.
+- Every critique must be backed by specific evidence, not speculation — with URL to the original source.
 - Surface inconvenient facts — the ones advocates prefer not to mention.
 - Distinguish between "widely debated" and "one person's fringe opinion."
 - Do not interpret or recommend — present critical facts.
@@ -4359,11 +4361,14 @@ The controversies, the counter-narratives, the unsettled questions. This is wher
 What to read/watch/follow next. Organized by interest (e.g. "如果你对 XX 感兴趣,从这里开始"). Include books, papers, people to follow, communities, key sources.
 
 ### 7. 来源与说明 / Sources & Caveats
-Consolidated source list from the research. Then a short subsection: "已知局限" (known limitations) — what this report may have missed, what the DA flagged, what is uncertain. Be honest — this builds trust.
+Consolidated source list from the research. **Every source MUST include its URL** — a source name without a URL is not a source. Format each entry as: `- [Source Name](URL) — one-line description of what it contributed.` Group sources by type (academic papers, industry reports, official websites, community resources, etc.).
+
+Then a short subsection: "已知局限" (known limitations) — what this report may have missed, what the DA flagged, what is uncertain. Be honest — this builds trust.
 
 ## Rules
 - Write in the report language (default Chinese, per artifacts/00-pipeline-log.md).
-- Every quantitative claim must carry its source.
+- Every quantitative claim must carry its source **with URL**. If the original research artifact has a URL for a source, you MUST preserve it — do not drop URLs.
+- In-text citations: when citing a specific claim, use `[Source Name](URL)` format as a clickable markdown link so the reader can verify directly.
 - Do NOT introduce new claims not present in 01-research.md or 02-challenges.md.
 - Do NOT drop the critique researcher's findings or the DA's gaps — they ARE the depth.
 - Use tables for comparisons and timelines; prose for narrative.
@@ -4545,9 +4550,29 @@ APIEOF
 
 ## Workflow
 
+### Phase 0 — Hero image (MANDATORY, always first)
+
+Before scanning the report, generate ONE hero/cover image for the entire article. This image goes immediately after the title, before any section content.
+
+- **Type**: AI generate (hero illustration)
+- **Model**: Gemini 3.1 Flash Image
+- **Purpose**: A visual summary that captures the essence of the entire topic — the one image that gives a reader the gist before they read a word
+- **Aspect ratio**: 16:9 wide (use `2K` imageSize for Gemini)
+- **Prompt style**: Describe the topic's key visual elements, mood, and scope. Make it inviting, not technical.
+- **Placement**: right after `# Title\n\n`, before section 1 starts
+- **File**: `images/00-hero.png`
+
+Example prompt:
+```
+A visually rich hero illustration capturing the essence of [topic].
+[3-4 key visual elements representing the domain].
+Warm, editorial photography style. 16:9 wide composition.
+Clean, professional, inviting. No text, no watermarks, no labels.
+```
+
 ### Phase 1 — Plan (scan report, produce image spec list)
 
-Read the report and identify **5-8** places where an image would add significant value. For each, decide search vs. generate based on this matrix:
+Read the report and identify **5-8** places where an image would add significant value (IN ADDITION to the hero image from Phase 0). For each, decide search vs. generate based on this matrix:
 
 | Content type | Source | Why |
 |---|---|---|
@@ -4601,29 +4626,40 @@ For each image spec:
 
 Write `artifacts/03-report-illustrated.md` — a copy of the text report with images embedded at their planned positions.
 
-Each image embedded as:
+**Image sizing rules (MUST follow):**
+
+| Image role | Recommended width | Markdown syntax |
+|---|---|---|
+| Hero image (00) | 100% of content width | `<img src="images/00-hero.png" width="100%">` |
+| Full-width diagrams/charts | 90-100% | `<img src="images/<NN>-<slug>.png" width="95%">` |
+| Inline photos / illustrations | 60-80% | `<img src="images/<NN>-<slug>.jpg" width="70%">` |
+| Small comparison / detail | 40-60% | `<img src="images/<NN>-<slug>.png" width="50%">` |
+
+Use HTML `<img>` tags (not Markdown `![]()`) to control width. Use percentage-based widths for responsiveness — the PDF renderer will scale them correctly. Never use raw Markdown image syntax — always use `<img>` with explicit `width="XX%"`.
+
+**Embed format:**
 
 **For search images (MUST include clickable source URL):**
-```markdown
-![Caption describing image content](images/<NN>-<slug>.jpg)
+```html
+<img src="images/<NN>-<slug>.jpg" width="70%">
 *▲ Caption: one line describing the image. Source: [Source Name](https://original-source-url.com/page)*
 ```
 
 **For AI-generated images:**
-```markdown
-![Caption describing image content](images/<NN>-<slug>.png)
+```html
+<img src="images/<NN>-<slug>.png" width="80%">
 *▲ Caption: one line describing the image. AI-generated via [Gemini/GPT Image 2]*
 ```
-
-The `Source:` link MUST be a clickable markdown link to the exact page where the image was found — NOT just a domain name. This applies to both the `.md` file and the PDF (when rendered from HTML, the link survives).
 
 ## Output
 - `images/` directory with 5-8 image files.
 - `artifacts/03-report-illustrated.md` — the full report with images embedded at their planned positions. The text content of the report must remain IDENTICAL to the original — only image embeds and captions are added.
 
 ## Rules
-- 5-8 images total. Do not over-illustrate.
+- **Phase 0 is MANDATORY**: always generate one hero image. This is in addition to the 5-8 content images.
+- Total images: 1 hero + 5-8 content = 6-9. Do not over-illustrate.
 - ~70% real photos (search), ~30% AI diagrams (generate). Never generate what can be photographed.
+- **Image sizing**: use HTML `<img width="XX%">` tags with percentage widths (hero: 100%, full-width: 90-95%, inline: 60-80%, detail: 40-60%). Never use raw Markdown `![]()` — always `<img>` with explicit width.
 - For AI generation: invoke `ai-image-generator` skill first, then use its framework and API patterns. Gemini for concept diagrams without text; GPT Image 2 for anything with readable labels.
 - Search sources MUST be Wikipedia, Wikimedia Commons, official brand/site pages, museum collections, or well-known authoritative blogs. Reject stock photo sites, random social media, Pinterest, or unverifiable sources.
 - **MANDATORY: For every search image, record and publish the original source URL.** The URL must be: (a) stored in the image spec, (b) included as a clickable markdown link in the caption, and (c) preserved in the PDF output. This is the audit trail — without it, the image provenance is unverifiable.
