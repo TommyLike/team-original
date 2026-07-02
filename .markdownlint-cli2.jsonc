@@ -1,7 +1,14 @@
 {
   // Vendored rich-text assets (fonts license readmes, storytelling corpus,
   // brand templates) are not repo documentation — exclude from markdown linting.
+  //
+  // templates/** holds the pipeline payload: agent instruction files and
+  // orchestration guides copied verbatim into generated projects. It is
+  // delivered content, not repo documentation, and does not follow the repo's
+  // markdown style (line-length etc. do not apply to instruction prose).
+  // Linting/formatting the payload is a separate, deferred decision.
   "ignores": [
-    "assets/**"
+    "assets/**",
+    "templates/**"
   ]
 }
