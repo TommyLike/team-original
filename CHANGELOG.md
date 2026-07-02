@@ -4,6 +4,39 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-02] — Triple-Quote Hardening + Shared-Agent Doc Fix
+
+### Changed (root-cause fix for the SyntaxError class of regressions)
+
+- Converted the last 6 `files['...']` assignments in `init-pipeline.sh`
+  from single-/double-quoted single-line strings to triple-quoted strings
+  (`agents/analyst`, `agents/narrative-architect`, and the `COWORK.md` +
+  `docs/STEP7-GUIDE.md` pairs in both `research` and `tech`). Single-quoted
+  strings cannot span physical lines, so editing them by inserting a real
+  newline caused `SyntaxError: unterminated string literal` and aborted the
+  whole scaffold — the exact regression fixed reactively in the previous PR.
+  All 52 `files[]` entries are now triple-quoted. The conversion was done
+  programmatically and verified to produce **byte-identical** generated
+  output (research + tech projects diffed clean).
+- `CLAUDE.md`: added a rule under "When editing init-pipeline.sh" requiring
+  all `files[]` entries to use triple-quoted strings, to prevent the
+  single-quoted multi-line regression from recurring.
+
+### Fixed (misleading maintenance guidance)
+
+- `CLAUDE.md` "Shared components" claimed the shared agents
+  (`paper-analyst`, `devils-advocate`, `report-writer`,
+  `narrative-architect`) are copied "verbatim" and must be kept identical.
+  An audit showed they are in fact **intentional per-pipeline variants**
+  (e.g. `devils-advocate` attacks a tech assessment in `tech` but audits
+  knowledge coverage in `explore`), with deliberately different content and
+  artifact numbering. Rewrote the guidance to describe them as tailored
+  variants sharing a skeleton: fix structural/mechanical bugs across all
+  copies, but preserve each variant's intentional wording. No functional
+  drift bug was found — this is a documentation-accuracy fix.
+
+---
+
 ## [2026-07-02] — Scaffold Smoke Test
 
 ### Added

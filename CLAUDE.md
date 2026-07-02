@@ -62,6 +62,12 @@ No separate command needed — detection runs automatically on session start.
   avoid heredoc escaping issues
 - Keep Python-generated content in the `PYEOF` blocks — do not use shell
   heredocs for multi-line files with special characters
+- **Always assign `files['...']` entries with triple-quoted strings**
+  (`"""..."""`). A single- or double-quoted string cannot span physical
+  lines, so inserting a real newline into one produces
+  `SyntaxError: unterminated string literal` and the ENTIRE scaffold fails
+  to generate. Every `files[]` entry is triple-quoted today — keep it that
+  way; never introduce a single-quoted multi-line-content string.
 - After editing, run `bash test/smoke-test.sh` to verify all six pipeline
   types scaffold correctly (see **Smoke test** under Repository conventions)
 
@@ -93,9 +99,20 @@ Each new pipeline case must:
 
 When two or more pipelines use the same agent or output recipe:
 
-- **Agent files** (e.g. `paper-analyst`, `devils-advocate`): copy the
-  `files['agents/<name>/CLAUDE.md']` entry verbatim between case blocks.
-  When fixing a bug in one copy, fix ALL copies.
+- **Agent files** (e.g. `paper-analyst`, `devils-advocate`,
+  `report-writer`, `narrative-architect`): these are **per-pipeline
+  tailored variants**, NOT verbatim copies. They share a common role and
+  section skeleton, but the domain-specific content is deliberately
+  customized per pipeline (e.g. `devils-advocate` attacks a *technology
+  assessment* in `tech` but audits *knowledge coverage* in `explore`;
+  `report-writer` emits a research report in `research` vs a maturity /
+  competitive assessment in `tech`). Artifact names and numbering also
+  differ per pipeline by design. So: do NOT blindly overwrite one copy with
+  another. When fixing a **structural or mechanical** bug that applies to
+  all of them (a wrong shared artifact path, the single-quoted-string
+  SyntaxError pattern, a broken instruction common to every variant), audit
+  and fix EVERY copy — but preserve each variant's intentional per-pipeline
+  wording.
 - **PDF generation recipe**: the HTML→Chromium recipe in the Step 7
   output gate must stay identical across `research`, `tech`, and `explore`.
   It bakes in the default font stack (Source Han Serif SC / Source Serif 4),

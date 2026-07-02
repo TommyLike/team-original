@@ -894,7 +894,43 @@ You ACTIVELY SEEK evidence that contradicts the likely recommendations:
 - Do not modify input.md.
 - Run to completion and write the artifact. Cowork handles user confirmation checkpoints.
 """
-files['agents/analyst/CLAUDE.md'] = "# Analyst\n\nYou are a senior strategy analyst. Your job is to transform research into actionable analysis, and later to defend it against challenge.\n\n## Input (first pass)\nRead artifacts/01-research.md and input.md (for original intent and audience).\nIf a style profile was resolved (check artifacts/00-pipeline-log.md for `resolved-style`), invoke that skill to obtain SOPs relevant to your stage.\n\n## Output (first pass)\nWrite artifacts/02-analysis.md with this structure:\n### 1. Problem framing\n### 2. Options analysis (with pros/cons/risks for each)\n### 3. Recommended approach (with justification)\n### 4. Phased roadmap (stages, key activities, dependencies)\n### 5. Key risks and mitigations\n\n## Input (revision pass — after Devil's Advocate)\nRead artifacts/02a-challenges.md (the Devil's Advocate's attack on your analysis).\n\n## Output (revision pass)\nWrite artifacts/02-analysis-final.md — a revised, hardened version of your analysis.\nFor EVERY challenge in 02a-challenges.md, you must EITHER:\n- (a) Accept the challenge and revise your analysis accordingly, OR\n- (b) Rebut the challenge with specific evidence from 01-research.md\n\nAdd a new section at the end:\n### 6. Challenge responses\nFor each challenge, state: [ACCEPTED — revised Section X] or [REBUTTED — because: specific evidence]\n\n## Rules\n- Prioritize truth over agreement with the user's priors.\n- Every recommendation must trace back to evidence in 01-research.md.\n- Do NOT ignore the contrarian findings from the research. Address them.\n- Identify and name trade-offs explicitly — do not hide them.\n- Do not modify artifacts/01-research.md.\n- Run to completion and write the artifact. Claude Code handles user confirmation checkpoints.\n"
+files['agents/analyst/CLAUDE.md'] = """# Analyst
+
+You are a senior strategy analyst. Your job is to transform research into actionable analysis, and later to defend it against challenge.
+
+## Input (first pass)
+Read artifacts/01-research.md and input.md (for original intent and audience).
+If a style profile was resolved (check artifacts/00-pipeline-log.md for `resolved-style`), invoke that skill to obtain SOPs relevant to your stage.
+
+## Output (first pass)
+Write artifacts/02-analysis.md with this structure:
+### 1. Problem framing
+### 2. Options analysis (with pros/cons/risks for each)
+### 3. Recommended approach (with justification)
+### 4. Phased roadmap (stages, key activities, dependencies)
+### 5. Key risks and mitigations
+
+## Input (revision pass — after Devil's Advocate)
+Read artifacts/02a-challenges.md (the Devil's Advocate's attack on your analysis).
+
+## Output (revision pass)
+Write artifacts/02-analysis-final.md — a revised, hardened version of your analysis.
+For EVERY challenge in 02a-challenges.md, you must EITHER:
+- (a) Accept the challenge and revise your analysis accordingly, OR
+- (b) Rebut the challenge with specific evidence from 01-research.md
+
+Add a new section at the end:
+### 6. Challenge responses
+For each challenge, state: [ACCEPTED — revised Section X] or [REBUTTED — because: specific evidence]
+
+## Rules
+- Prioritize truth over agreement with the user's priors.
+- Every recommendation must trace back to evidence in 01-research.md.
+- Do NOT ignore the contrarian findings from the research. Address them.
+- Identify and name trade-offs explicitly — do not hide them.
+- Do not modify artifacts/01-research.md.
+- Run to completion and write the artifact. Claude Code handles user confirmation checkpoints.
+"""
 files['agents/devils-advocate/CLAUDE.md'] = """# Devil's Advocate
 
 You are a ruthless but fair critic. Your ONLY job is to attack the analyst\'s work to make it stronger.
@@ -941,7 +977,63 @@ Then attack the analysis itself:
 - Produce at least 5 challenges. If you can\'t find 5, the analysis is either excellent or you\'re not trying hard enough.
 - Do not modify any other artifacts.
 """
-files['agents/narrative-architect/CLAUDE.md'] = '# Narrative Architect\n\nYou are a presentation strategist. Your ONLY job is to design the slide-by-slide information architecture — the structural skeleton — before any copy is written.\n\n## Why this step exists\nFixing the structure at this stage costs 10x less than fixing it after the PPT is built.\nYour skeleton lets the user review and adjust the presentation architecture before committing to slide copy.\n\n## Input\nRead artifacts/03-report.md (the analysis to be presented) and input.md (audience, constraints).\nIf a style profile was resolved (check artifacts/00-pipeline-log.md for `resolved-style`), read that skill\'s layout selection guide.\n\n## Output\nWrite two files:\n\n### 1. artifacts/04-narrative.md — the slide skeleton (structure below)\n\n### 2. artifacts/04-diagram-specs.md — diagram specs for every visual in the deck\nAfter writing the narrative, produce this file listing every diagram needed.\nFollow the Diagram Spec Format: one spec block per diagram, with Type, Tool\n(auto-select if unsure), content fields, and Output path as\n`diagrams/slide<NN>-<slug>.png`. See `.claude/commands/diagram.md` for the full spec format.\n\n**Language (MUST)**: All diagram labels, annotations, and text content in diagram specs MUST be written in the slide language from `artifacts/00-pipeline-log.md` (`slide-language`). If the slides are in Chinese, diagram specs must specify Chinese labels — never default to English. Generate diagrams with labels matching the deck language.\n\n---\n\nWrite artifacts/04-narrative.md with this structure:\n\n### Story arc (2-3 sentences)\nWhat is the overall narrative flow? What should the audience feel / know / decide after seeing this deck?\n\n### Slide plan\nFor each slide:\n\n#### Slide N: [Proposed title — must be a conclusion sentence, not a topic label]\n- **Core message**: One sentence. The single assertion this slide makes.\n- **Layout**: [cover | contents | content | two_column | three_column | table | architecture | process | timeline | highlight_stat | chart | quadrant]\n- **Why this layout**: One sentence rationale.\n- **Must-include data**: Specific numbers, quotes, or facts from 03-report.md that must appear on this slide.\n- **Must-exclude**: What belongs in speaker notes, not the slide itself.\n\n## Title rules\nBad (topic label) vs Good (conclusion sentence):\n- Bad: "Industry best practices" / Good: "Top OSPOs all use \'small core + large network\' architecture"\n- Bad: "Risk analysis" / Good: "Geopolitical risk has escalated to medium-high; contingency plans are urgent"\n\n## Layout selection guide\nhighlight_stat > chart > architecture > process > timeline > two_column > three_column > table > content\n\n## Rules\n- Target 14-22 slides (including cover, contents pages, end page).\n- Each section must have a contents page immediately before its first content slide.\n- Every slide has exactly ONE core message — no exceptions.\n- Do NOT write slide copy. Only design the skeleton structure.\n- Run to completion and write the full narrative plan. Cowork will show it to the user for confirmation after you finish.\n'
+files['agents/narrative-architect/CLAUDE.md'] = """# Narrative Architect
+
+You are a presentation strategist. Your ONLY job is to design the slide-by-slide information architecture — the structural skeleton — before any copy is written.
+
+## Why this step exists
+Fixing the structure at this stage costs 10x less than fixing it after the PPT is built.
+Your skeleton lets the user review and adjust the presentation architecture before committing to slide copy.
+
+## Input
+Read artifacts/03-report.md (the analysis to be presented) and input.md (audience, constraints).
+If a style profile was resolved (check artifacts/00-pipeline-log.md for `resolved-style`), read that skill's layout selection guide.
+
+## Output
+Write two files:
+
+### 1. artifacts/04-narrative.md — the slide skeleton (structure below)
+
+### 2. artifacts/04-diagram-specs.md — diagram specs for every visual in the deck
+After writing the narrative, produce this file listing every diagram needed.
+Follow the Diagram Spec Format: one spec block per diagram, with Type, Tool
+(auto-select if unsure), content fields, and Output path as
+`diagrams/slide<NN>-<slug>.png`. See `.claude/commands/diagram.md` for the full spec format.
+
+**Language (MUST)**: All diagram labels, annotations, and text content in diagram specs MUST be written in the slide language from `artifacts/00-pipeline-log.md` (`slide-language`). If the slides are in Chinese, diagram specs must specify Chinese labels — never default to English. Generate diagrams with labels matching the deck language.
+
+---
+
+Write artifacts/04-narrative.md with this structure:
+
+### Story arc (2-3 sentences)
+What is the overall narrative flow? What should the audience feel / know / decide after seeing this deck?
+
+### Slide plan
+For each slide:
+
+#### Slide N: [Proposed title — must be a conclusion sentence, not a topic label]
+- **Core message**: One sentence. The single assertion this slide makes.
+- **Layout**: [cover | contents | content | two_column | three_column | table | architecture | process | timeline | highlight_stat | chart | quadrant]
+- **Why this layout**: One sentence rationale.
+- **Must-include data**: Specific numbers, quotes, or facts from 03-report.md that must appear on this slide.
+- **Must-exclude**: What belongs in speaker notes, not the slide itself.
+
+## Title rules
+Bad (topic label) vs Good (conclusion sentence):
+- Bad: "Industry best practices" / Good: "Top OSPOs all use 'small core + large network' architecture"
+- Bad: "Risk analysis" / Good: "Geopolitical risk has escalated to medium-high; contingency plans are urgent"
+
+## Layout selection guide
+highlight_stat > chart > architecture > process > timeline > two_column > three_column > table > content
+
+## Rules
+- Target 14-22 slides (including cover, contents pages, end page).
+- Each section must have a contents page immediately before its first content slide.
+- Every slide has exactly ONE core message — no exceptions.
+- Do NOT write slide copy. Only design the skeleton structure.
+- Run to completion and write the full narrative plan. Cowork will show it to the user for confirmation after you finish.
+"""
 files['agents/report-writer/CLAUDE.md'] = """# Report Writer
 
 You are a senior analytical writer. Your ONLY job is to turn the hardened analysis into a polished, reader-facing research report — the canonical, format-agnostic deliverable that later output steps (PDF, PPTX) build from.
@@ -1048,8 +1140,395 @@ Tone: engaging, conversational. Write to be read aloud. Short paragraphs, rhetor
 - Do not modify any other artifact.
 - Run to completion and write the full report.
 """
-files['COWORK.md'] = '# PPT Build Guide — Cowork\n\n**You are Cowork.** This file is your guide for building the PPT (Step 7).\nThe research phase (Steps 1–6) must be complete before running this.\n\n---\n\n## Prerequisites — check before starting\n\nVerify these artifacts exist and are non-empty:\n\n| Artifact | Contents |\n|---|---|\n| `artifacts/01-research.md` | Synthesized multi-lens research |\n| `artifacts/02-analysis-final.md` | Hardened analysis (all challenges addressed) |\n| `artifacts/04-narrative.md` | Slide-by-slide structure plan |\n\nAlso read `artifacts/00-pipeline-log.md` to confirm:\n- `artifact-language:` — language for source content\n- `slide-language:` — language for slide copy\n- `pptx-template:` — template path or style description\n\nIf any artifact is missing or empty, tell the user to complete the research phase first\n(open Claude Code in this folder and say: `Read CLAUDE.md and run the pipeline`).\n\n---\n\n## Step 7 — PPT Creation\n\nRead `docs/STEP7-GUIDE.md` for the full four-stage build procedure.\n\n**Default template**: `../_shared/pptx-templates/tech-ppt.pptx`\nOverride with the user-specified path from `artifacts/00-pipeline-log.md` if one was provided.\n\nSource content:\n- `artifacts/01-research.md` — background data and evidence\n- `artifacts/02-analysis-final.md` — analysis and recommendations\n- `artifacts/04-narrative.md` — slide-by-slide structure and layout plan\n\n### Four-stage build summary\n\n- **Stage A — Content mapping**: Produce a slide-by-slide content plan table from the narrative and analysis artifacts. Show to user for review before touching any PPTX file.\n- **Stage B — Template setup**: Archive current deck (if any), copy template, unpack to `artifacts/unpacked/`, adjust slide count, map narrative slides to template slide XMLs.\n- **Stage C — Parallel slide editing**: Spawn parallel subagents to fill content into slide XML files. Each subagent handles a batch of slides using the Edit tool only.\n- **Stage D — Screenshot review**: Pack the deck, convert to PDF, review per-slide images with the user, make targeted fixes, iterate until approved.\n\nSee `docs/STEP7-GUIDE.md` for the complete procedure, commands, batching strategy, design rules, and failure modes.\n\n---\n\n## Version management\n\nBefore each rebuild, copy the current deck:\n```\ncp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx\n```\nIncrement N from the highest existing version in `artifacts/versions/`.\nLog the version in `artifacts/00-pipeline-log.md`.\n\n---\n\n## Pipeline log\n\nMaintain `artifacts/00-pipeline-log.md` throughout. Record:\n- Step 7 start timestamp\n- Stage completions (A, B, C, D)\n- Version numbers for each rebuild\n- Any user-requested fixes and which slides were changed\n\n---\n\n## Rules\n\n1. Always verify prerequisites (the three artifacts + pipeline log settings) before starting Stage A.\n2. Never start Stage B until the user approves the content plan from Stage A.\n3. Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `artifacts/05-deck.pptx`.\n4. Make surgical edits only — do not rebuild the entire deck for a single slide fix.\n5. Show the user the PDF after each Stage D pack so they can review visually.\n6. Iterate conversationally with the user on slide content and layout until they approve.\n7. Run the temporary file cleanup (below) after final user approval to remove screenshots and unpacked XMLs.\n8. **Rights footer (MUST)**: before final approval, verify `docs/rights.template.md` is rendered into the deck footer (or closing slide). Replace the `<#...>` placeholder with the model names from `artifacts/00-pipeline-log.md`. **Do not skip this step.**\n\n---\n\n## Temporary file cleanup\n\nAfter the user approves the final deck (end of Stage D), delete intermediate files:\n```\nrm -rf artifacts/slide-screenshots/\nrm -rf artifacts/unpacked/\n```\nThese are build artifacts — screenshots are for review only, unpacked XMLs are obsolete once packed.\nIf the user requests further changes after cleanup, Stage B will re-create both directories.\n'
-files['docs/STEP7-GUIDE.md'] = '# Step 7 — PPT Build Guide\n\nThis document is read by Cowork at Step 7. Follow the four stages in order.\n\n> **All paths and shell commands are relative to the project root.\n> Run every command from the project root, not from the `docs/` folder.**\n\n---\n\n## Prerequisites\n\n| Item | Path (from project root) |\n|---|---|\n| Template PPTX | `../_shared/pptx-templates/tech-ppt.pptx` |\n| Pptx skill scripts | `../../.claude/skills/pptx/scripts/` |\n| Icon extractor | `../_shared/pptx-templates/icon-extract.py` |\n| Icon thumbnails | `../_shared/icon-catalog/slide-{N}.jpg` |\n| Source: research | `artifacts/01-research.md` |\n| Source: analysis | `artifacts/02-analysis-final.md` |\n| Source: narrative | `artifacts/04-narrative.md` |\n| Output | `artifacts/05-deck.pptx` |\n| Version archive | `artifacts/versions/05-deck-v{N}.pptx` |\n| Unpacked working dir | `artifacts/unpacked/` |\n| Screenshot output | `artifacts/slide-screenshots/` |\n\n---\n\n## Stage A — Content Mapping (review BEFORE building)\n\n**Goal**: Produce a complete slide-by-slide content plan and show it to the user for approval\nbefore touching any PPTX file. Errors caught here cost nothing. Errors caught after building\ncost a full rebuild.\n\nFor each slide in `04-narrative.md`, fill in this table from `02-analysis-final.md` and `01-research.md`:\n\n| Slide | Title | Layout | Key bullets (<=15 words each) | Data points to include |\n|---|---|---|---|---|\n\nRules:\n- Pull exact numbers and quotes from the source artifacts — do not paraphrase statistics.\n- Bullets must be <=15 words. Cut ruthlessly.\n- Speaker notes carry the detail; slides carry the headline.\n- Use the slide language confirmed in `artifacts/00-pipeline-log.md`.\n- Show the completed table to the user. Wait for approval before Stage B.\n- The user may edit individual cells before approving.\n\n---\n\n## Stage B — Template Setup\n\n### 1. Archive current deck first\n```\nls artifacts/versions/\ncp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx\n```\nSkip if no deck exists yet (first build).\n\n### 2. Copy template and unpack\n```\ncp ../_shared/pptx-templates/tech-ppt.pptx artifacts/05-deck-new.pptx\npython ../../.claude/skills/pptx/scripts/office/unpack.py \\\n  artifacts/05-deck-new.pptx artifacts/unpacked/\n```\n(`05-deck-new.pptx` is temporary — deleted after Stage D packing.)\n\n### 3. Slide count adjustment\nThe template has **19 content slides** (slides 1-19) plus **13 icon/asset slides** (slides 20-32).\nThe icon/asset slides are source-only assets — never used in the final deck.\n\nCompare the narrative slide count from `04-narrative.md` against the 19 content slides.\nDelete any template slides not needed by removing their `<p:sldId>` entries from\n`artifacts/unpacked/ppt/presentation.xml`, then run:\n```\npython ../../.claude/skills/pptx/scripts/clean.py artifacts/unpacked/\n```\nAfter any deletions, renumber slide IDs in `presentation.xml` to be contiguous.\n\n### 4. Slide layout mapping\n\nReview `04-narrative.md` and map each narrative slide to the best-matching template slide XML.\nBuild this table (one row per narrative slide):\n\n| Narrative slide | Layout type | Template slide XML to reuse | Notes |\n|---|---|---|---|\n| (fill from 04-narrative.md) | | | |\n\nUseful template slide types in `tech-ppt.pptx`:\n- slide1.xml — cover\n- slide2.xml — contents / table of contents\n- slide3.xml, slide9.xml, slide19.xml — section dividers (dark background, white text)\n- slide4.xml, slide8.xml — architecture / layered diagram\n- slide5.xml, slide13.xml — two-column\n- slide6.xml, slide12.xml, slide16.xml — three-column\n- slide7.xml, slide23.xml — highlight stat\n- slide10.xml — quadrant (2x2 matrix)\n- slide11.xml, slide22.xml — table\n- slide14.xml, slide17.xml — process / sequential steps\n- slide15.xml — two-column with contrast\n- slide21.xml — timeline\n\n---\n\n## Stage C — Parallel Slide Editing\n\nAfter structural setup is complete (Stage B step 4 done), spawn parallel subagents to fill\nin content. Each subagent handles one or a few slides.\n\nSubagent prompt template:\n```\nEdit these slide XML files in artifacts/unpacked/ppt/slides/:\n  - slideN.xml [, slideM.xml]\n\nContent to insert (from the approved Stage A content plan):\n  [paste the relevant rows from the content table]\n\nFormatting rules (MUST follow):\n1. Use the Edit tool for all XML changes — never sed or Python scripts.\n2. Font: preserve existing <a:latin typeface="..."/> and <a:ea typeface="..."/> attributes.\n3. Bullets: use existing <a:buChar> or <a:buNone> — never add unicode bullets.\n4. Bold headers: set b="1" on <a:rPr> for all column headers, slide section labels.\n5. Never concatenate multiple bullets into one <a:p> — each bullet is a separate paragraph.\n6. Smart quotes in new text: use XML entities &#x201C; and &#x201D;.\n7. Do not change any shape positions, sizes, or colors — edit text content only.\n8. If a template slot has more items than the content plan, delete the excess <a:p> elements entirely.\n9. Preserve xml:space="preserve" on any <a:t> with leading/trailing spaces.\n\nRead the slide XML first, identify every text placeholder, then replace with final content.\n```\n\nSuggested batching (group by complexity):\n- Batch 1 (simple): cover, contents, section dividers — text-only edits\n- Batch 2 (columns): two-column and three-column slides\n- Batch 3 (data-heavy): architecture, highlight-stat, quadrant slides\n- Batch 4 (structured): tables, process, timeline, closing slides\n\n---\n\n## Stage D — Screenshot Review\n\n### Pack and generate per-slide images\n```\npython ../../.claude/skills/pptx/scripts/office/pack.py \\\n  artifacts/unpacked/ artifacts/05-deck.pptx \\\n  --original ../_shared/pptx-templates/tech-ppt.pptx\n\npython ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\\n  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx\nrm -f artifacts/slide-screenshots/slide-*.jpg\npdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide\nls -1 "$PWD"/artifacts/slide-screenshots/slide-*.jpg\n```\n\n### Review checklist\n- [ ] Every slide has a title\n- [ ] No text visibly overflows its box\n- [ ] Section dividers have dark background with light text\n- [ ] Highlight stat slides show the key number prominently\n- [ ] Tables have all rows filled — no empty cells from template\n- [ ] Process slides show sequential steps clearly\n- [ ] Timeline shows phases with correct labels and dates\n- [ ] All characters render correctly (no tofu/boxes for non-Latin scripts)\n- [ ] Page numbers present on all slides except cover\n- [ ] Footer shows correct N / Total on all numbered slides\n- [ ] Rights footer visible on every slide (from docs/rights.template.md, model names from pipeline log)\n\n### Targeted fixes\nFor any issue: edit the specific slide XML directly, then re-pack and regenerate PDF.\nDo NOT rebuild the entire deck — make surgical edits only.\nDo NOT create `05-deck-final.pptx` or any other name — canonical output is always `05-deck.pptx`.\n\n```\npython ../../.claude/skills/pptx/scripts/office/pack.py \\\n  artifacts/unpacked/ artifacts/05-deck.pptx \\\n  --original ../_shared/pptx-templates/tech-ppt.pptx\nrm -f artifacts/05-deck-new.pptx\n\npython ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\\n  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx\nrm -f artifacts/slide-screenshots/slide-*.jpg\npdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide\n```\n\n### Post-approval cleanup\nAfter the user approves the final deck, remove intermediate build artifacts:\n```\nrm -rf artifacts/slide-screenshots/\nrm -rf artifacts/unpacked/\n```\nThese are ephemeral — screenshots are for review only, unpacked XMLs are obsolete once packed.\nIf further changes are needed after cleanup, Stage B will re-create both directories.\n\n---\n\n## Design rules\n\nEstablish during Stage A by inspecting the template. Record in `artifacts/00-pipeline-log.md`\nunder `design-rules:`.\n\n| Property | Default (tech-ppt.pptx) |\n|---|---|\n| Primary accent color | #173953 (deep navy) |\n| Secondary accent | #8500FF (purple) |\n| Body text dark | #191919 |\n| Light background | #FFFBF9 |\n| CJK font | Source Han Serif SC |\n| Latin font | Source Serif 4 |\n| Two-column: header / body | 24pt bold / 18pt |\n| Three-column: header / body | 20pt bold / 16pt |\n| Takeaway bar | Left-aligned, accent color, bottom margin |\n| Page numbers | Footer, all slides except cover (format: N / Total) |\n| Section dividers | Full-screen #173953 rectangle, white text |\n\n**Default body fonts** (installed system-wide by init-pipeline.sh): set `<a:ea typeface="Source Han Serif SC"/>` and `<a:latin typeface="Source Serif 4"/>` for both majorFont and minorFont in `ppt/theme/theme1.xml` fontScheme so all runs inherit them. Stage C rule 2 still applies to any special per-shape typefaces.\n\n**Rights footer (MUST)**: render `docs/rights.template.md` into the deck footer (or a closing slide), replacing the `<#...>` placeholder with the model names used this run (from `artifacts/00-pipeline-log.md`). **This step is mandatory — do NOT skip.**\n\n---\n\n## Common failure modes to watch for\n\n1. **Empty template slots** — if a template slide has 4 items but the content only needs 3,\n   delete the 4th element entirely (shape + text box). Do not just clear the text.\n\n2. **Non-Latin text encoding** — all text must be in UTF-8. The Edit tool is safe.\n   If generating XML directly, verify encoding.\n\n3. **Font fallback** — preserve existing `<a:latin typeface="..."/>` and `<a:ea typeface="..."/>` attributes.\n\n4. **Slide count mismatch** — after deletion in Stage B, verify `presentation.xml`\n   `<p:sldIdLst>` entry count matches your target slide count before proceeding.\n\n5. **Architecture/quadrant layout** — edit `<a:t>` inside each `<p:sp>` individually.\n   Do not move or resize shapes.\n\n6. **Footer numerator vs. XML file number** — if slides are deleted from the template,\n   XML file numbers no longer equal deck position. Always set footer to deck position.\n\n---\n\n## Using template icon assets (slides 20-32)\n\nThe canonical template contains 13 "asset slides" (slides 20-32) that are never copied into\nthe final deck. They hold reusable vector icon groups and infographic shapes.\n\n### What\'s available\n\n| Template slide | Contents |\n|---|---|\n| 20 | Infographic elements — arrows, pie/donut charts, process bars, speech bubbles |\n| 21 | World maps (5 styles) + globe icons + location pins |\n| 22 | Flowchart / process-flow / org-chart shapes and timeline diagrams |\n| 23 | Gantt chart templates (month x phase x task) |\n| 24 | Business infographic shapes — gears, puzzle pieces, target circles, lightbulb, trophy |\n| 25 | Additional infographic shapes — funnels, pyramids, step diagrams, venn diagrams |\n| 26 | Icon usage instructions (skip — not for pipeline use) |\n| 27 | Educational Icons (left) + Medical Icons (right) |\n| 28 | Business Icons (left) + Teamwork Icons (right) |\n| 29 | Help & Support Icons (left) + Avatar Icons (right) |\n| 30 | Creative Process Icons (left) + Performing Arts Icons (right) |\n| 31 | Nature Icons |\n| 32 | SEO & Marketing Icons |\n\nAll are vector (custGeom bezier paths inside grpSp groups) — fully scalable and recolorable.\nVisual thumbnails: `../_shared/icon-catalog/slide-{N}.jpg`\n\n### How to use\n\nIdentify the icon by viewing the thumbnail and counting its reading-order position\n(left-to-right, top-to-bottom, 1-based). For split slides (27-30), left = first category,\nright = second category (split at x = 6,000,000 EMU).\n\nList icons on a slide:\n```\npython3 ../_shared/pptx-templates/icon-extract.py list 28 --side left\npython3 ../_shared/pptx-templates/icon-extract.py list 28 --side right\n```\n\nInject an icon into a target slide:\n```\npython3 ../_shared/pptx-templates/icon-extract.py inject 28 3 \\\n    artifacts/unpacked/ppt/slides/slide7.xml \\\n    700000 1200000 --cx 500000 --cy 500000 --side left\n```\n\nKey XML facts:\n- Each icon is a grpSp block; its outer grpSpPr/a:xfrm controls position/size.\n- a:off x/y = position (914,400 EMU = 1 inch).\n- a:ext cx/cy = rendered size. Change only this to resize; leave chOff/chExt alone.\n- To recolor: replace all srgbClr val inside the group with your target hex.\n\nEMU reference: full slide = 12,192,000 x 6,858,000 | 1 cm ~= 360,000 | icon native ~= 489,000\n\nWhen to use icons: section dividers, feature comparison rows, timeline milestones, cover decoration.\nOne icon per concept maximum — don\'t crowd slides.\n'
+files['COWORK.md'] = """# PPT Build Guide — Cowork
+
+**You are Cowork.** This file is your guide for building the PPT (Step 7).
+The research phase (Steps 1–6) must be complete before running this.
+
+---
+
+## Prerequisites — check before starting
+
+Verify these artifacts exist and are non-empty:
+
+| Artifact | Contents |
+|---|---|
+| `artifacts/01-research.md` | Synthesized multi-lens research |
+| `artifacts/02-analysis-final.md` | Hardened analysis (all challenges addressed) |
+| `artifacts/04-narrative.md` | Slide-by-slide structure plan |
+
+Also read `artifacts/00-pipeline-log.md` to confirm:
+- `artifact-language:` — language for source content
+- `slide-language:` — language for slide copy
+- `pptx-template:` — template path or style description
+
+If any artifact is missing or empty, tell the user to complete the research phase first
+(open Claude Code in this folder and say: `Read CLAUDE.md and run the pipeline`).
+
+---
+
+## Step 7 — PPT Creation
+
+Read `docs/STEP7-GUIDE.md` for the full four-stage build procedure.
+
+**Default template**: `../_shared/pptx-templates/tech-ppt.pptx`
+Override with the user-specified path from `artifacts/00-pipeline-log.md` if one was provided.
+
+Source content:
+- `artifacts/01-research.md` — background data and evidence
+- `artifacts/02-analysis-final.md` — analysis and recommendations
+- `artifacts/04-narrative.md` — slide-by-slide structure and layout plan
+
+### Four-stage build summary
+
+- **Stage A — Content mapping**: Produce a slide-by-slide content plan table from the narrative and analysis artifacts. Show to user for review before touching any PPTX file.
+- **Stage B — Template setup**: Archive current deck (if any), copy template, unpack to `artifacts/unpacked/`, adjust slide count, map narrative slides to template slide XMLs.
+- **Stage C — Parallel slide editing**: Spawn parallel subagents to fill content into slide XML files. Each subagent handles a batch of slides using the Edit tool only.
+- **Stage D — Screenshot review**: Pack the deck, convert to PDF, review per-slide images with the user, make targeted fixes, iterate until approved.
+
+See `docs/STEP7-GUIDE.md` for the complete procedure, commands, batching strategy, design rules, and failure modes.
+
+---
+
+## Version management
+
+Before each rebuild, copy the current deck:
+```
+cp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx
+```
+Increment N from the highest existing version in `artifacts/versions/`.
+Log the version in `artifacts/00-pipeline-log.md`.
+
+---
+
+## Pipeline log
+
+Maintain `artifacts/00-pipeline-log.md` throughout. Record:
+- Step 7 start timestamp
+- Stage completions (A, B, C, D)
+- Version numbers for each rebuild
+- Any user-requested fixes and which slides were changed
+
+---
+
+## Rules
+
+1. Always verify prerequisites (the three artifacts + pipeline log settings) before starting Stage A.
+2. Never start Stage B until the user approves the content plan from Stage A.
+3. Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `artifacts/05-deck.pptx`.
+4. Make surgical edits only — do not rebuild the entire deck for a single slide fix.
+5. Show the user the PDF after each Stage D pack so they can review visually.
+6. Iterate conversationally with the user on slide content and layout until they approve.
+7. Run the temporary file cleanup (below) after final user approval to remove screenshots and unpacked XMLs.
+8. **Rights footer (MUST)**: before final approval, verify `docs/rights.template.md` is rendered into the deck footer (or closing slide). Replace the `<#...>` placeholder with the model names from `artifacts/00-pipeline-log.md`. **Do not skip this step.**
+
+---
+
+## Temporary file cleanup
+
+After the user approves the final deck (end of Stage D), delete intermediate files:
+```
+rm -rf artifacts/slide-screenshots/
+rm -rf artifacts/unpacked/
+```
+These are build artifacts — screenshots are for review only, unpacked XMLs are obsolete once packed.
+If the user requests further changes after cleanup, Stage B will re-create both directories.
+"""
+files['docs/STEP7-GUIDE.md'] = """# Step 7 — PPT Build Guide
+
+This document is read by Cowork at Step 7. Follow the four stages in order.
+
+> **All paths and shell commands are relative to the project root.
+> Run every command from the project root, not from the `docs/` folder.**
+
+---
+
+## Prerequisites
+
+| Item | Path (from project root) |
+|---|---|
+| Template PPTX | `../_shared/pptx-templates/tech-ppt.pptx` |
+| Pptx skill scripts | `../../.claude/skills/pptx/scripts/` |
+| Icon extractor | `../_shared/pptx-templates/icon-extract.py` |
+| Icon thumbnails | `../_shared/icon-catalog/slide-{N}.jpg` |
+| Source: research | `artifacts/01-research.md` |
+| Source: analysis | `artifacts/02-analysis-final.md` |
+| Source: narrative | `artifacts/04-narrative.md` |
+| Output | `artifacts/05-deck.pptx` |
+| Version archive | `artifacts/versions/05-deck-v{N}.pptx` |
+| Unpacked working dir | `artifacts/unpacked/` |
+| Screenshot output | `artifacts/slide-screenshots/` |
+
+---
+
+## Stage A — Content Mapping (review BEFORE building)
+
+**Goal**: Produce a complete slide-by-slide content plan and show it to the user for approval
+before touching any PPTX file. Errors caught here cost nothing. Errors caught after building
+cost a full rebuild.
+
+For each slide in `04-narrative.md`, fill in this table from `02-analysis-final.md` and `01-research.md`:
+
+| Slide | Title | Layout | Key bullets (<=15 words each) | Data points to include |
+|---|---|---|---|---|
+
+Rules:
+- Pull exact numbers and quotes from the source artifacts — do not paraphrase statistics.
+- Bullets must be <=15 words. Cut ruthlessly.
+- Speaker notes carry the detail; slides carry the headline.
+- Use the slide language confirmed in `artifacts/00-pipeline-log.md`.
+- Show the completed table to the user. Wait for approval before Stage B.
+- The user may edit individual cells before approving.
+
+---
+
+## Stage B — Template Setup
+
+### 1. Archive current deck first
+```
+ls artifacts/versions/
+cp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx
+```
+Skip if no deck exists yet (first build).
+
+### 2. Copy template and unpack
+```
+cp ../_shared/pptx-templates/tech-ppt.pptx artifacts/05-deck-new.pptx
+python ../../.claude/skills/pptx/scripts/office/unpack.py \\
+  artifacts/05-deck-new.pptx artifacts/unpacked/
+```
+(`05-deck-new.pptx` is temporary — deleted after Stage D packing.)
+
+### 3. Slide count adjustment
+The template has **19 content slides** (slides 1-19) plus **13 icon/asset slides** (slides 20-32).
+The icon/asset slides are source-only assets — never used in the final deck.
+
+Compare the narrative slide count from `04-narrative.md` against the 19 content slides.
+Delete any template slides not needed by removing their `<p:sldId>` entries from
+`artifacts/unpacked/ppt/presentation.xml`, then run:
+```
+python ../../.claude/skills/pptx/scripts/clean.py artifacts/unpacked/
+```
+After any deletions, renumber slide IDs in `presentation.xml` to be contiguous.
+
+### 4. Slide layout mapping
+
+Review `04-narrative.md` and map each narrative slide to the best-matching template slide XML.
+Build this table (one row per narrative slide):
+
+| Narrative slide | Layout type | Template slide XML to reuse | Notes |
+|---|---|---|---|
+| (fill from 04-narrative.md) | | | |
+
+Useful template slide types in `tech-ppt.pptx`:
+- slide1.xml — cover
+- slide2.xml — contents / table of contents
+- slide3.xml, slide9.xml, slide19.xml — section dividers (dark background, white text)
+- slide4.xml, slide8.xml — architecture / layered diagram
+- slide5.xml, slide13.xml — two-column
+- slide6.xml, slide12.xml, slide16.xml — three-column
+- slide7.xml, slide23.xml — highlight stat
+- slide10.xml — quadrant (2x2 matrix)
+- slide11.xml, slide22.xml — table
+- slide14.xml, slide17.xml — process / sequential steps
+- slide15.xml — two-column with contrast
+- slide21.xml — timeline
+
+---
+
+## Stage C — Parallel Slide Editing
+
+After structural setup is complete (Stage B step 4 done), spawn parallel subagents to fill
+in content. Each subagent handles one or a few slides.
+
+Subagent prompt template:
+```
+Edit these slide XML files in artifacts/unpacked/ppt/slides/:
+  - slideN.xml [, slideM.xml]
+
+Content to insert (from the approved Stage A content plan):
+  [paste the relevant rows from the content table]
+
+Formatting rules (MUST follow):
+1. Use the Edit tool for all XML changes — never sed or Python scripts.
+2. Font: preserve existing <a:latin typeface="..."/> and <a:ea typeface="..."/> attributes.
+3. Bullets: use existing <a:buChar> or <a:buNone> — never add unicode bullets.
+4. Bold headers: set b="1" on <a:rPr> for all column headers, slide section labels.
+5. Never concatenate multiple bullets into one <a:p> — each bullet is a separate paragraph.
+6. Smart quotes in new text: use XML entities &#x201C; and &#x201D;.
+7. Do not change any shape positions, sizes, or colors — edit text content only.
+8. If a template slot has more items than the content plan, delete the excess <a:p> elements entirely.
+9. Preserve xml:space="preserve" on any <a:t> with leading/trailing spaces.
+
+Read the slide XML first, identify every text placeholder, then replace with final content.
+```
+
+Suggested batching (group by complexity):
+- Batch 1 (simple): cover, contents, section dividers — text-only edits
+- Batch 2 (columns): two-column and three-column slides
+- Batch 3 (data-heavy): architecture, highlight-stat, quadrant slides
+- Batch 4 (structured): tables, process, timeline, closing slides
+
+---
+
+## Stage D — Screenshot Review
+
+### Pack and generate per-slide images
+```
+python ../../.claude/skills/pptx/scripts/office/pack.py \\
+  artifacts/unpacked/ artifacts/05-deck.pptx \\
+  --original ../_shared/pptx-templates/tech-ppt.pptx
+
+python ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\
+  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx
+rm -f artifacts/slide-screenshots/slide-*.jpg
+pdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide
+ls -1 "$PWD"/artifacts/slide-screenshots/slide-*.jpg
+```
+
+### Review checklist
+- [ ] Every slide has a title
+- [ ] No text visibly overflows its box
+- [ ] Section dividers have dark background with light text
+- [ ] Highlight stat slides show the key number prominently
+- [ ] Tables have all rows filled — no empty cells from template
+- [ ] Process slides show sequential steps clearly
+- [ ] Timeline shows phases with correct labels and dates
+- [ ] All characters render correctly (no tofu/boxes for non-Latin scripts)
+- [ ] Page numbers present on all slides except cover
+- [ ] Footer shows correct N / Total on all numbered slides
+- [ ] Rights footer visible on every slide (from docs/rights.template.md, model names from pipeline log)
+
+### Targeted fixes
+For any issue: edit the specific slide XML directly, then re-pack and regenerate PDF.
+Do NOT rebuild the entire deck — make surgical edits only.
+Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `05-deck.pptx`.
+
+```
+python ../../.claude/skills/pptx/scripts/office/pack.py \\
+  artifacts/unpacked/ artifacts/05-deck.pptx \\
+  --original ../_shared/pptx-templates/tech-ppt.pptx
+rm -f artifacts/05-deck-new.pptx
+
+python ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\
+  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx
+rm -f artifacts/slide-screenshots/slide-*.jpg
+pdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide
+```
+
+### Post-approval cleanup
+After the user approves the final deck, remove intermediate build artifacts:
+```
+rm -rf artifacts/slide-screenshots/
+rm -rf artifacts/unpacked/
+```
+These are ephemeral — screenshots are for review only, unpacked XMLs are obsolete once packed.
+If further changes are needed after cleanup, Stage B will re-create both directories.
+
+---
+
+## Design rules
+
+Establish during Stage A by inspecting the template. Record in `artifacts/00-pipeline-log.md`
+under `design-rules:`.
+
+| Property | Default (tech-ppt.pptx) |
+|---|---|
+| Primary accent color | #173953 (deep navy) |
+| Secondary accent | #8500FF (purple) |
+| Body text dark | #191919 |
+| Light background | #FFFBF9 |
+| CJK font | Source Han Serif SC |
+| Latin font | Source Serif 4 |
+| Two-column: header / body | 24pt bold / 18pt |
+| Three-column: header / body | 20pt bold / 16pt |
+| Takeaway bar | Left-aligned, accent color, bottom margin |
+| Page numbers | Footer, all slides except cover (format: N / Total) |
+| Section dividers | Full-screen #173953 rectangle, white text |
+
+**Default body fonts** (installed system-wide by init-pipeline.sh): set `<a:ea typeface="Source Han Serif SC"/>` and `<a:latin typeface="Source Serif 4"/>` for both majorFont and minorFont in `ppt/theme/theme1.xml` fontScheme so all runs inherit them. Stage C rule 2 still applies to any special per-shape typefaces.
+
+**Rights footer (MUST)**: render `docs/rights.template.md` into the deck footer (or a closing slide), replacing the `<#...>` placeholder with the model names used this run (from `artifacts/00-pipeline-log.md`). **This step is mandatory — do NOT skip.**
+
+---
+
+## Common failure modes to watch for
+
+1. **Empty template slots** — if a template slide has 4 items but the content only needs 3,
+   delete the 4th element entirely (shape + text box). Do not just clear the text.
+
+2. **Non-Latin text encoding** — all text must be in UTF-8. The Edit tool is safe.
+   If generating XML directly, verify encoding.
+
+3. **Font fallback** — preserve existing `<a:latin typeface="..."/>` and `<a:ea typeface="..."/>` attributes.
+
+4. **Slide count mismatch** — after deletion in Stage B, verify `presentation.xml`
+   `<p:sldIdLst>` entry count matches your target slide count before proceeding.
+
+5. **Architecture/quadrant layout** — edit `<a:t>` inside each `<p:sp>` individually.
+   Do not move or resize shapes.
+
+6. **Footer numerator vs. XML file number** — if slides are deleted from the template,
+   XML file numbers no longer equal deck position. Always set footer to deck position.
+
+---
+
+## Using template icon assets (slides 20-32)
+
+The canonical template contains 13 "asset slides" (slides 20-32) that are never copied into
+the final deck. They hold reusable vector icon groups and infographic shapes.
+
+### What's available
+
+| Template slide | Contents |
+|---|---|
+| 20 | Infographic elements — arrows, pie/donut charts, process bars, speech bubbles |
+| 21 | World maps (5 styles) + globe icons + location pins |
+| 22 | Flowchart / process-flow / org-chart shapes and timeline diagrams |
+| 23 | Gantt chart templates (month x phase x task) |
+| 24 | Business infographic shapes — gears, puzzle pieces, target circles, lightbulb, trophy |
+| 25 | Additional infographic shapes — funnels, pyramids, step diagrams, venn diagrams |
+| 26 | Icon usage instructions (skip — not for pipeline use) |
+| 27 | Educational Icons (left) + Medical Icons (right) |
+| 28 | Business Icons (left) + Teamwork Icons (right) |
+| 29 | Help & Support Icons (left) + Avatar Icons (right) |
+| 30 | Creative Process Icons (left) + Performing Arts Icons (right) |
+| 31 | Nature Icons |
+| 32 | SEO & Marketing Icons |
+
+All are vector (custGeom bezier paths inside grpSp groups) — fully scalable and recolorable.
+Visual thumbnails: `../_shared/icon-catalog/slide-{N}.jpg`
+
+### How to use
+
+Identify the icon by viewing the thumbnail and counting its reading-order position
+(left-to-right, top-to-bottom, 1-based). For split slides (27-30), left = first category,
+right = second category (split at x = 6,000,000 EMU).
+
+List icons on a slide:
+```
+python3 ../_shared/pptx-templates/icon-extract.py list 28 --side left
+python3 ../_shared/pptx-templates/icon-extract.py list 28 --side right
+```
+
+Inject an icon into a target slide:
+```
+python3 ../_shared/pptx-templates/icon-extract.py inject 28 3 \\
+    artifacts/unpacked/ppt/slides/slide7.xml \\
+    700000 1200000 --cx 500000 --cy 500000 --side left
+```
+
+Key XML facts:
+- Each icon is a grpSp block; its outer grpSpPr/a:xfrm controls position/size.
+- a:off x/y = position (914,400 EMU = 1 inch).
+- a:ext cx/cy = rendered size. Change only this to resize; leave chOff/chExt alone.
+- To recolor: replace all srgbClr val inside the group with your target hex.
+
+EMU reference: full slide = 12,192,000 x 6,858,000 | 1 cm ~= 360,000 | icon native ~= 489,000
+
+When to use icons: section dividers, feature comparison rows, timeline milestones, cover decoration.
+One icon per concept maximum — don't crowd slides.
+"""
 for path, content in files.items():
     os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(path) else None
     open(path, 'w').write(content)
@@ -3729,8 +4208,395 @@ highlight_stat > chart > architecture > process > timeline > two_column > three_
 - Run to completion. Cowork shows it to the user after you finish.
 """
 
-files['COWORK.md'] = '# PPT Build Guide — Cowork\n\n**You are Cowork.** This file is your guide for building the PPT (Step 7).\nThe research phase (Steps 1–6) must be complete before running this.\n\n---\n\n## Prerequisites — check before starting\n\nVerify these artifacts exist and are non-empty:\n\n| Artifact | Contents |\n|---|---|\n| `artifacts/01-research.md` | Synthesized multi-lens research |\n| `artifacts/02-analysis-final.md` | Hardened analysis (all challenges addressed) |\n| `artifacts/04-narrative.md` | Slide-by-slide structure plan |\n\nAlso read `artifacts/00-pipeline-log.md` to confirm:\n- `artifact-language:` — language for source content\n- `slide-language:` — language for slide copy\n- `pptx-template:` — template path or style description\n\nIf any artifact is missing or empty, tell the user to complete the research phase first\n(open Claude Code in this folder and say: `Read CLAUDE.md and run the pipeline`).\n\n---\n\n## Step 7 — PPT Creation\n\nRead `docs/STEP7-GUIDE.md` for the full four-stage build procedure.\n\n**Default template**: `../_shared/pptx-templates/tech-ppt.pptx`\nOverride with the user-specified path from `artifacts/00-pipeline-log.md` if one was provided.\n\nSource content:\n- `artifacts/01-research.md` — background data and evidence\n- `artifacts/02-analysis-final.md` — analysis and recommendations\n- `artifacts/04-narrative.md` — slide-by-slide structure and layout plan\n\n### Four-stage build summary\n\n- **Stage A — Content mapping**: Produce a slide-by-slide content plan table from the narrative and analysis artifacts. Show to user for review before touching any PPTX file.\n- **Stage B — Template setup**: Archive current deck (if any), copy template, unpack to `artifacts/unpacked/`, adjust slide count, map narrative slides to template slide XMLs.\n- **Stage C — Parallel slide editing**: Spawn parallel subagents to fill content into slide XML files. Each subagent handles a batch of slides using the Edit tool only.\n- **Stage D — Screenshot review**: Pack the deck, convert to PDF, review per-slide images with the user, make targeted fixes, iterate until approved.\n\nSee `docs/STEP7-GUIDE.md` for the complete procedure, commands, batching strategy, design rules, and failure modes.\n\n---\n\n## Version management\n\nBefore each rebuild, copy the current deck:\n```\ncp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx\n```\nIncrement N from the highest existing version in `artifacts/versions/`.\nLog the version in `artifacts/00-pipeline-log.md`.\n\n---\n\n## Pipeline log\n\nMaintain `artifacts/00-pipeline-log.md` throughout. Record:\n- Step 7 start timestamp\n- Stage completions (A, B, C, D)\n- Version numbers for each rebuild\n- Any user-requested fixes and which slides were changed\n\n---\n\n## Rules\n\n1. Always verify prerequisites (the three artifacts + pipeline log settings) before starting Stage A.\n2. Never start Stage B until the user approves the content plan from Stage A.\n3. Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `artifacts/05-deck.pptx`.\n4. Make surgical edits only — do not rebuild the entire deck for a single slide fix.\n5. Show the user the PDF after each Stage D pack so they can review visually.\n6. Iterate conversationally with the user on slide content and layout until they approve.\n7. Run the temporary file cleanup (below) after final user approval to remove screenshots and unpacked XMLs.\n8. **Rights footer (MUST)**: before final approval, verify `docs/rights.template.md` is rendered into the deck footer (or closing slide). Replace the `<#...>` placeholder with the model names from `artifacts/00-pipeline-log.md`. **Do not skip this step.**\n\n---\n\n## Temporary file cleanup\n\nAfter the user approves the final deck (end of Stage D), delete intermediate files:\n```\nrm -rf artifacts/slide-screenshots/\nrm -rf artifacts/unpacked/\n```\nThese are build artifacts — screenshots are for review only, unpacked XMLs are obsolete once packed.\nIf the user requests further changes after cleanup, Stage B will re-create both directories.\n'
-files['docs/STEP7-GUIDE.md'] = '# Step 7 — PPT Build Guide\n\nThis document is read by Cowork at Step 7. Follow the four stages in order.\n\n> **All paths and shell commands are relative to the project root.\n> Run every command from the project root, not from the `docs/` folder.**\n\n---\n\n## Prerequisites\n\n| Item | Path (from project root) |\n|---|---|\n| Template PPTX | `../_shared/pptx-templates/tech-ppt.pptx` |\n| Pptx skill scripts | `../../.claude/skills/pptx/scripts/` |\n| Icon extractor | `../_shared/pptx-templates/icon-extract.py` |\n| Icon thumbnails | `../_shared/icon-catalog/slide-{N}.jpg` |\n| Source: research | `artifacts/01-research.md` |\n| Source: analysis | `artifacts/02-analysis-final.md` |\n| Source: narrative | `artifacts/04-narrative.md` |\n| Output | `artifacts/05-deck.pptx` |\n| Version archive | `artifacts/versions/05-deck-v{N}.pptx` |\n| Unpacked working dir | `artifacts/unpacked/` |\n| Screenshot output | `artifacts/slide-screenshots/` |\n\n---\n\n## Stage A — Content Mapping (review BEFORE building)\n\n**Goal**: Produce a complete slide-by-slide content plan and show it to the user for approval\nbefore touching any PPTX file. Errors caught here cost nothing. Errors caught after building\ncost a full rebuild.\n\nFor each slide in `04-narrative.md`, fill in this table from `02-analysis-final.md` and `01-research.md`:\n\n| Slide | Title | Layout | Key bullets (<=15 words each) | Data points to include |\n|---|---|---|---|---|\n\nRules:\n- Pull exact numbers and quotes from the source artifacts — do not paraphrase statistics.\n- Bullets must be <=15 words. Cut ruthlessly.\n- Speaker notes carry the detail; slides carry the headline.\n- Use the slide language confirmed in `artifacts/00-pipeline-log.md`.\n- Show the completed table to the user. Wait for approval before Stage B.\n- The user may edit individual cells before approving.\n\n---\n\n## Stage B — Template Setup\n\n### 1. Archive current deck first\n```\nls artifacts/versions/\ncp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx\n```\nSkip if no deck exists yet (first build).\n\n### 2. Copy template and unpack\n```\ncp ../_shared/pptx-templates/tech-ppt.pptx artifacts/05-deck-new.pptx\npython ../../.claude/skills/pptx/scripts/office/unpack.py \\\n  artifacts/05-deck-new.pptx artifacts/unpacked/\n```\n(`05-deck-new.pptx` is temporary — deleted after Stage D packing.)\n\n### 3. Slide count adjustment\nThe template has **19 content slides** (slides 1-19) plus **13 icon/asset slides** (slides 20-32).\nThe icon/asset slides are source-only assets — never used in the final deck.\n\nCompare the narrative slide count from `04-narrative.md` against the 19 content slides.\nDelete any template slides not needed by removing their `<p:sldId>` entries from\n`artifacts/unpacked/ppt/presentation.xml`, then run:\n```\npython ../../.claude/skills/pptx/scripts/clean.py artifacts/unpacked/\n```\nAfter any deletions, renumber slide IDs in `presentation.xml` to be contiguous.\n\n### 4. Slide layout mapping\n\nReview `04-narrative.md` and map each narrative slide to the best-matching template slide XML.\nBuild this table (one row per narrative slide):\n\n| Narrative slide | Layout type | Template slide XML to reuse | Notes |\n|---|---|---|---|\n| (fill from 04-narrative.md) | | | |\n\nUseful template slide types in `tech-ppt.pptx`:\n- slide1.xml — cover\n- slide2.xml — contents / table of contents\n- slide3.xml, slide9.xml, slide19.xml — section dividers (dark background, white text)\n- slide4.xml, slide8.xml — architecture / layered diagram\n- slide5.xml, slide13.xml — two-column\n- slide6.xml, slide12.xml, slide16.xml — three-column\n- slide7.xml, slide23.xml — highlight stat\n- slide10.xml — quadrant (2x2 matrix)\n- slide11.xml, slide22.xml — table\n- slide14.xml, slide17.xml — process / sequential steps\n- slide15.xml — two-column with contrast\n- slide21.xml — timeline\n\n---\n\n## Stage C — Parallel Slide Editing\n\nAfter structural setup is complete (Stage B step 4 done), spawn parallel subagents to fill\nin content. Each subagent handles one or a few slides.\n\nSubagent prompt template:\n```\nEdit these slide XML files in artifacts/unpacked/ppt/slides/:\n  - slideN.xml [, slideM.xml]\n\nContent to insert (from the approved Stage A content plan):\n  [paste the relevant rows from the content table]\n\nFormatting rules (MUST follow):\n1. Use the Edit tool for all XML changes — never sed or Python scripts.\n2. Font: preserve existing <a:latin typeface="..."/> and <a:ea typeface="..."/> attributes.\n3. Bullets: use existing <a:buChar> or <a:buNone> — never add unicode bullets.\n4. Bold headers: set b="1" on <a:rPr> for all column headers, slide section labels.\n5. Never concatenate multiple bullets into one <a:p> — each bullet is a separate paragraph.\n6. Smart quotes in new text: use XML entities &#x201C; and &#x201D;.\n7. Do not change any shape positions, sizes, or colors — edit text content only.\n8. If a template slot has more items than the content plan, delete the excess <a:p> elements entirely.\n9. Preserve xml:space="preserve" on any <a:t> with leading/trailing spaces.\n\nRead the slide XML first, identify every text placeholder, then replace with final content.\n```\n\nSuggested batching (group by complexity):\n- Batch 1 (simple): cover, contents, section dividers — text-only edits\n- Batch 2 (columns): two-column and three-column slides\n- Batch 3 (data-heavy): architecture, highlight-stat, quadrant slides\n- Batch 4 (structured): tables, process, timeline, closing slides\n\n---\n\n## Stage D — Screenshot Review\n\n### Pack and generate per-slide images\n```\npython ../../.claude/skills/pptx/scripts/office/pack.py \\\n  artifacts/unpacked/ artifacts/05-deck.pptx \\\n  --original ../_shared/pptx-templates/tech-ppt.pptx\n\npython ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\\n  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx\nrm -f artifacts/slide-screenshots/slide-*.jpg\npdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide\nls -1 "$PWD"/artifacts/slide-screenshots/slide-*.jpg\n```\n\n### Review checklist\n- [ ] Every slide has a title\n- [ ] No text visibly overflows its box\n- [ ] Section dividers have dark background with light text\n- [ ] Highlight stat slides show the key number prominently\n- [ ] Tables have all rows filled — no empty cells from template\n- [ ] Process slides show sequential steps clearly\n- [ ] Timeline shows phases with correct labels and dates\n- [ ] All characters render correctly (no tofu/boxes for non-Latin scripts)\n- [ ] Page numbers present on all slides except cover\n- [ ] Footer shows correct N / Total on all numbered slides\n- [ ] Rights footer visible on every slide (from docs/rights.template.md, model names from pipeline log)\n\n### Targeted fixes\nFor any issue: edit the specific slide XML directly, then re-pack and regenerate PDF.\nDo NOT rebuild the entire deck — make surgical edits only.\nDo NOT create `05-deck-final.pptx` or any other name — canonical output is always `05-deck.pptx`.\n\n```\npython ../../.claude/skills/pptx/scripts/office/pack.py \\\n  artifacts/unpacked/ artifacts/05-deck.pptx \\\n  --original ../_shared/pptx-templates/tech-ppt.pptx\nrm -f artifacts/05-deck-new.pptx\n\npython ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\\n  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx\nrm -f artifacts/slide-screenshots/slide-*.jpg\npdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide\n```\n\n### Post-approval cleanup\nAfter the user approves the final deck, remove intermediate build artifacts:\n```\nrm -rf artifacts/slide-screenshots/\nrm -rf artifacts/unpacked/\n```\nThese are ephemeral — screenshots are for review only, unpacked XMLs are obsolete once packed.\nIf further changes are needed after cleanup, Stage B will re-create both directories.\n\n---\n\n## Design rules\n\nEstablish during Stage A by inspecting the template. Record in `artifacts/00-pipeline-log.md`\nunder `design-rules:`.\n\n| Property | Default (tech-ppt.pptx) |\n|---|---|\n| Primary accent color | #173953 (deep navy) |\n| Secondary accent | #8500FF (purple) |\n| Body text dark | #191919 |\n| Light background | #FFFBF9 |\n| CJK font | Source Han Serif SC |\n| Latin font | Source Serif 4 |\n| Two-column: header / body | 24pt bold / 18pt |\n| Three-column: header / body | 20pt bold / 16pt |\n| Takeaway bar | Left-aligned, accent color, bottom margin |\n| Page numbers | Footer, all slides except cover (format: N / Total) |\n| Section dividers | Full-screen #173953 rectangle, white text |\n\n**Default body fonts** (installed system-wide by init-pipeline.sh): set `<a:ea typeface="Source Han Serif SC"/>` and `<a:latin typeface="Source Serif 4"/>` for both majorFont and minorFont in `ppt/theme/theme1.xml` fontScheme so all runs inherit them. Stage C rule 2 still applies to any special per-shape typefaces.\n\n**Rights footer (MUST)**: render `docs/rights.template.md` into the deck footer (or a closing slide), replacing the `<#...>` placeholder with the model names used this run (from `artifacts/00-pipeline-log.md`). **This step is mandatory — do NOT skip.**\n\n---\n\n## Common failure modes to watch for\n\n1. **Empty template slots** — if a template slide has 4 items but the content only needs 3,\n   delete the 4th element entirely (shape + text box). Do not just clear the text.\n\n2. **Non-Latin text encoding** — all text must be in UTF-8. The Edit tool is safe.\n   If generating XML directly, verify encoding.\n\n3. **Font fallback** — preserve existing `<a:latin typeface="..."/>` and `<a:ea typeface="..."/>` attributes.\n\n4. **Slide count mismatch** — after deletion in Stage B, verify `presentation.xml`\n   `<p:sldIdLst>` entry count matches your target slide count before proceeding.\n\n5. **Architecture/quadrant layout** — edit `<a:t>` inside each `<p:sp>` individually.\n   Do not move or resize shapes.\n\n6. **Footer numerator vs. XML file number** — if slides are deleted from the template,\n   XML file numbers no longer equal deck position. Always set footer to deck position.\n\n---\n\n## Using template icon assets (slides 20-32)\n\nThe canonical template contains 13 "asset slides" (slides 20-32) that are never copied into\nthe final deck. They hold reusable vector icon groups and infographic shapes.\n\n### What\'s available\n\n| Template slide | Contents |\n|---|---|\n| 20 | Infographic elements — arrows, pie/donut charts, process bars, speech bubbles |\n| 21 | World maps (5 styles) + globe icons + location pins |\n| 22 | Flowchart / process-flow / org-chart shapes and timeline diagrams |\n| 23 | Gantt chart templates (month x phase x task) |\n| 24 | Business infographic shapes — gears, puzzle pieces, target circles, lightbulb, trophy |\n| 25 | Additional infographic shapes — funnels, pyramids, step diagrams, venn diagrams |\n| 26 | Icon usage instructions (skip — not for pipeline use) |\n| 27 | Educational Icons (left) + Medical Icons (right) |\n| 28 | Business Icons (left) + Teamwork Icons (right) |\n| 29 | Help & Support Icons (left) + Avatar Icons (right) |\n| 30 | Creative Process Icons (left) + Performing Arts Icons (right) |\n| 31 | Nature Icons |\n| 32 | SEO & Marketing Icons |\n\nAll are vector (custGeom bezier paths inside grpSp groups) — fully scalable and recolorable.\nVisual thumbnails: `../_shared/icon-catalog/slide-{N}.jpg`\n\n### How to use\n\nIdentify the icon by viewing the thumbnail and counting its reading-order position\n(left-to-right, top-to-bottom, 1-based). For split slides (27-30), left = first category,\nright = second category (split at x = 6,000,000 EMU).\n\nList icons on a slide:\n```\npython3 ../_shared/pptx-templates/icon-extract.py list 28 --side left\npython3 ../_shared/pptx-templates/icon-extract.py list 28 --side right\n```\n\nInject an icon into a target slide:\n```\npython3 ../_shared/pptx-templates/icon-extract.py inject 28 3 \\\n    artifacts/unpacked/ppt/slides/slide7.xml \\\n    700000 1200000 --cx 500000 --cy 500000 --side left\n```\n\nKey XML facts:\n- Each icon is a grpSp block; its outer grpSpPr/a:xfrm controls position/size.\n- a:off x/y = position (914,400 EMU = 1 inch).\n- a:ext cx/cy = rendered size. Change only this to resize; leave chOff/chExt alone.\n- To recolor: replace all srgbClr val inside the group with your target hex.\n\nEMU reference: full slide = 12,192,000 x 6,858,000 | 1 cm ~= 360,000 | icon native ~= 489,000\n\nWhen to use icons: section dividers, feature comparison rows, timeline milestones, cover decoration.\nOne icon per concept maximum — don\'t crowd slides.\n'
+files['COWORK.md'] = """# PPT Build Guide — Cowork
+
+**You are Cowork.** This file is your guide for building the PPT (Step 7).
+The research phase (Steps 1–6) must be complete before running this.
+
+---
+
+## Prerequisites — check before starting
+
+Verify these artifacts exist and are non-empty:
+
+| Artifact | Contents |
+|---|---|
+| `artifacts/01-research.md` | Synthesized multi-lens research |
+| `artifacts/02-analysis-final.md` | Hardened analysis (all challenges addressed) |
+| `artifacts/04-narrative.md` | Slide-by-slide structure plan |
+
+Also read `artifacts/00-pipeline-log.md` to confirm:
+- `artifact-language:` — language for source content
+- `slide-language:` — language for slide copy
+- `pptx-template:` — template path or style description
+
+If any artifact is missing or empty, tell the user to complete the research phase first
+(open Claude Code in this folder and say: `Read CLAUDE.md and run the pipeline`).
+
+---
+
+## Step 7 — PPT Creation
+
+Read `docs/STEP7-GUIDE.md` for the full four-stage build procedure.
+
+**Default template**: `../_shared/pptx-templates/tech-ppt.pptx`
+Override with the user-specified path from `artifacts/00-pipeline-log.md` if one was provided.
+
+Source content:
+- `artifacts/01-research.md` — background data and evidence
+- `artifacts/02-analysis-final.md` — analysis and recommendations
+- `artifacts/04-narrative.md` — slide-by-slide structure and layout plan
+
+### Four-stage build summary
+
+- **Stage A — Content mapping**: Produce a slide-by-slide content plan table from the narrative and analysis artifacts. Show to user for review before touching any PPTX file.
+- **Stage B — Template setup**: Archive current deck (if any), copy template, unpack to `artifacts/unpacked/`, adjust slide count, map narrative slides to template slide XMLs.
+- **Stage C — Parallel slide editing**: Spawn parallel subagents to fill content into slide XML files. Each subagent handles a batch of slides using the Edit tool only.
+- **Stage D — Screenshot review**: Pack the deck, convert to PDF, review per-slide images with the user, make targeted fixes, iterate until approved.
+
+See `docs/STEP7-GUIDE.md` for the complete procedure, commands, batching strategy, design rules, and failure modes.
+
+---
+
+## Version management
+
+Before each rebuild, copy the current deck:
+```
+cp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx
+```
+Increment N from the highest existing version in `artifacts/versions/`.
+Log the version in `artifacts/00-pipeline-log.md`.
+
+---
+
+## Pipeline log
+
+Maintain `artifacts/00-pipeline-log.md` throughout. Record:
+- Step 7 start timestamp
+- Stage completions (A, B, C, D)
+- Version numbers for each rebuild
+- Any user-requested fixes and which slides were changed
+
+---
+
+## Rules
+
+1. Always verify prerequisites (the three artifacts + pipeline log settings) before starting Stage A.
+2. Never start Stage B until the user approves the content plan from Stage A.
+3. Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `artifacts/05-deck.pptx`.
+4. Make surgical edits only — do not rebuild the entire deck for a single slide fix.
+5. Show the user the PDF after each Stage D pack so they can review visually.
+6. Iterate conversationally with the user on slide content and layout until they approve.
+7. Run the temporary file cleanup (below) after final user approval to remove screenshots and unpacked XMLs.
+8. **Rights footer (MUST)**: before final approval, verify `docs/rights.template.md` is rendered into the deck footer (or closing slide). Replace the `<#...>` placeholder with the model names from `artifacts/00-pipeline-log.md`. **Do not skip this step.**
+
+---
+
+## Temporary file cleanup
+
+After the user approves the final deck (end of Stage D), delete intermediate files:
+```
+rm -rf artifacts/slide-screenshots/
+rm -rf artifacts/unpacked/
+```
+These are build artifacts — screenshots are for review only, unpacked XMLs are obsolete once packed.
+If the user requests further changes after cleanup, Stage B will re-create both directories.
+"""
+files['docs/STEP7-GUIDE.md'] = """# Step 7 — PPT Build Guide
+
+This document is read by Cowork at Step 7. Follow the four stages in order.
+
+> **All paths and shell commands are relative to the project root.
+> Run every command from the project root, not from the `docs/` folder.**
+
+---
+
+## Prerequisites
+
+| Item | Path (from project root) |
+|---|---|
+| Template PPTX | `../_shared/pptx-templates/tech-ppt.pptx` |
+| Pptx skill scripts | `../../.claude/skills/pptx/scripts/` |
+| Icon extractor | `../_shared/pptx-templates/icon-extract.py` |
+| Icon thumbnails | `../_shared/icon-catalog/slide-{N}.jpg` |
+| Source: research | `artifacts/01-research.md` |
+| Source: analysis | `artifacts/02-analysis-final.md` |
+| Source: narrative | `artifacts/04-narrative.md` |
+| Output | `artifacts/05-deck.pptx` |
+| Version archive | `artifacts/versions/05-deck-v{N}.pptx` |
+| Unpacked working dir | `artifacts/unpacked/` |
+| Screenshot output | `artifacts/slide-screenshots/` |
+
+---
+
+## Stage A — Content Mapping (review BEFORE building)
+
+**Goal**: Produce a complete slide-by-slide content plan and show it to the user for approval
+before touching any PPTX file. Errors caught here cost nothing. Errors caught after building
+cost a full rebuild.
+
+For each slide in `04-narrative.md`, fill in this table from `02-analysis-final.md` and `01-research.md`:
+
+| Slide | Title | Layout | Key bullets (<=15 words each) | Data points to include |
+|---|---|---|---|---|
+
+Rules:
+- Pull exact numbers and quotes from the source artifacts — do not paraphrase statistics.
+- Bullets must be <=15 words. Cut ruthlessly.
+- Speaker notes carry the detail; slides carry the headline.
+- Use the slide language confirmed in `artifacts/00-pipeline-log.md`.
+- Show the completed table to the user. Wait for approval before Stage B.
+- The user may edit individual cells before approving.
+
+---
+
+## Stage B — Template Setup
+
+### 1. Archive current deck first
+```
+ls artifacts/versions/
+cp artifacts/05-deck.pptx artifacts/versions/05-deck-v{N}.pptx
+```
+Skip if no deck exists yet (first build).
+
+### 2. Copy template and unpack
+```
+cp ../_shared/pptx-templates/tech-ppt.pptx artifacts/05-deck-new.pptx
+python ../../.claude/skills/pptx/scripts/office/unpack.py \\
+  artifacts/05-deck-new.pptx artifacts/unpacked/
+```
+(`05-deck-new.pptx` is temporary — deleted after Stage D packing.)
+
+### 3. Slide count adjustment
+The template has **19 content slides** (slides 1-19) plus **13 icon/asset slides** (slides 20-32).
+The icon/asset slides are source-only assets — never used in the final deck.
+
+Compare the narrative slide count from `04-narrative.md` against the 19 content slides.
+Delete any template slides not needed by removing their `<p:sldId>` entries from
+`artifacts/unpacked/ppt/presentation.xml`, then run:
+```
+python ../../.claude/skills/pptx/scripts/clean.py artifacts/unpacked/
+```
+After any deletions, renumber slide IDs in `presentation.xml` to be contiguous.
+
+### 4. Slide layout mapping
+
+Review `04-narrative.md` and map each narrative slide to the best-matching template slide XML.
+Build this table (one row per narrative slide):
+
+| Narrative slide | Layout type | Template slide XML to reuse | Notes |
+|---|---|---|---|
+| (fill from 04-narrative.md) | | | |
+
+Useful template slide types in `tech-ppt.pptx`:
+- slide1.xml — cover
+- slide2.xml — contents / table of contents
+- slide3.xml, slide9.xml, slide19.xml — section dividers (dark background, white text)
+- slide4.xml, slide8.xml — architecture / layered diagram
+- slide5.xml, slide13.xml — two-column
+- slide6.xml, slide12.xml, slide16.xml — three-column
+- slide7.xml, slide23.xml — highlight stat
+- slide10.xml — quadrant (2x2 matrix)
+- slide11.xml, slide22.xml — table
+- slide14.xml, slide17.xml — process / sequential steps
+- slide15.xml — two-column with contrast
+- slide21.xml — timeline
+
+---
+
+## Stage C — Parallel Slide Editing
+
+After structural setup is complete (Stage B step 4 done), spawn parallel subagents to fill
+in content. Each subagent handles one or a few slides.
+
+Subagent prompt template:
+```
+Edit these slide XML files in artifacts/unpacked/ppt/slides/:
+  - slideN.xml [, slideM.xml]
+
+Content to insert (from the approved Stage A content plan):
+  [paste the relevant rows from the content table]
+
+Formatting rules (MUST follow):
+1. Use the Edit tool for all XML changes — never sed or Python scripts.
+2. Font: preserve existing <a:latin typeface="..."/> and <a:ea typeface="..."/> attributes.
+3. Bullets: use existing <a:buChar> or <a:buNone> — never add unicode bullets.
+4. Bold headers: set b="1" on <a:rPr> for all column headers, slide section labels.
+5. Never concatenate multiple bullets into one <a:p> — each bullet is a separate paragraph.
+6. Smart quotes in new text: use XML entities &#x201C; and &#x201D;.
+7. Do not change any shape positions, sizes, or colors — edit text content only.
+8. If a template slot has more items than the content plan, delete the excess <a:p> elements entirely.
+9. Preserve xml:space="preserve" on any <a:t> with leading/trailing spaces.
+
+Read the slide XML first, identify every text placeholder, then replace with final content.
+```
+
+Suggested batching (group by complexity):
+- Batch 1 (simple): cover, contents, section dividers — text-only edits
+- Batch 2 (columns): two-column and three-column slides
+- Batch 3 (data-heavy): architecture, highlight-stat, quadrant slides
+- Batch 4 (structured): tables, process, timeline, closing slides
+
+---
+
+## Stage D — Screenshot Review
+
+### Pack and generate per-slide images
+```
+python ../../.claude/skills/pptx/scripts/office/pack.py \\
+  artifacts/unpacked/ artifacts/05-deck.pptx \\
+  --original ../_shared/pptx-templates/tech-ppt.pptx
+
+python ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\
+  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx
+rm -f artifacts/slide-screenshots/slide-*.jpg
+pdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide
+ls -1 "$PWD"/artifacts/slide-screenshots/slide-*.jpg
+```
+
+### Review checklist
+- [ ] Every slide has a title
+- [ ] No text visibly overflows its box
+- [ ] Section dividers have dark background with light text
+- [ ] Highlight stat slides show the key number prominently
+- [ ] Tables have all rows filled — no empty cells from template
+- [ ] Process slides show sequential steps clearly
+- [ ] Timeline shows phases with correct labels and dates
+- [ ] All characters render correctly (no tofu/boxes for non-Latin scripts)
+- [ ] Page numbers present on all slides except cover
+- [ ] Footer shows correct N / Total on all numbered slides
+- [ ] Rights footer visible on every slide (from docs/rights.template.md, model names from pipeline log)
+
+### Targeted fixes
+For any issue: edit the specific slide XML directly, then re-pack and regenerate PDF.
+Do NOT rebuild the entire deck — make surgical edits only.
+Do NOT create `05-deck-final.pptx` or any other name — canonical output is always `05-deck.pptx`.
+
+```
+python ../../.claude/skills/pptx/scripts/office/pack.py \\
+  artifacts/unpacked/ artifacts/05-deck.pptx \\
+  --original ../_shared/pptx-templates/tech-ppt.pptx
+rm -f artifacts/05-deck-new.pptx
+
+python ../../.claude/skills/pptx/scripts/office/soffice.py --headless \\
+  --convert-to pdf --outdir artifacts/ artifacts/05-deck.pptx
+rm -f artifacts/slide-screenshots/slide-*.jpg
+pdftoppm -jpeg -r 150 artifacts/05-deck.pdf artifacts/slide-screenshots/slide
+```
+
+### Post-approval cleanup
+After the user approves the final deck, remove intermediate build artifacts:
+```
+rm -rf artifacts/slide-screenshots/
+rm -rf artifacts/unpacked/
+```
+These are ephemeral — screenshots are for review only, unpacked XMLs are obsolete once packed.
+If further changes are needed after cleanup, Stage B will re-create both directories.
+
+---
+
+## Design rules
+
+Establish during Stage A by inspecting the template. Record in `artifacts/00-pipeline-log.md`
+under `design-rules:`.
+
+| Property | Default (tech-ppt.pptx) |
+|---|---|
+| Primary accent color | #173953 (deep navy) |
+| Secondary accent | #8500FF (purple) |
+| Body text dark | #191919 |
+| Light background | #FFFBF9 |
+| CJK font | Source Han Serif SC |
+| Latin font | Source Serif 4 |
+| Two-column: header / body | 24pt bold / 18pt |
+| Three-column: header / body | 20pt bold / 16pt |
+| Takeaway bar | Left-aligned, accent color, bottom margin |
+| Page numbers | Footer, all slides except cover (format: N / Total) |
+| Section dividers | Full-screen #173953 rectangle, white text |
+
+**Default body fonts** (installed system-wide by init-pipeline.sh): set `<a:ea typeface="Source Han Serif SC"/>` and `<a:latin typeface="Source Serif 4"/>` for both majorFont and minorFont in `ppt/theme/theme1.xml` fontScheme so all runs inherit them. Stage C rule 2 still applies to any special per-shape typefaces.
+
+**Rights footer (MUST)**: render `docs/rights.template.md` into the deck footer (or a closing slide), replacing the `<#...>` placeholder with the model names used this run (from `artifacts/00-pipeline-log.md`). **This step is mandatory — do NOT skip.**
+
+---
+
+## Common failure modes to watch for
+
+1. **Empty template slots** — if a template slide has 4 items but the content only needs 3,
+   delete the 4th element entirely (shape + text box). Do not just clear the text.
+
+2. **Non-Latin text encoding** — all text must be in UTF-8. The Edit tool is safe.
+   If generating XML directly, verify encoding.
+
+3. **Font fallback** — preserve existing `<a:latin typeface="..."/>` and `<a:ea typeface="..."/>` attributes.
+
+4. **Slide count mismatch** — after deletion in Stage B, verify `presentation.xml`
+   `<p:sldIdLst>` entry count matches your target slide count before proceeding.
+
+5. **Architecture/quadrant layout** — edit `<a:t>` inside each `<p:sp>` individually.
+   Do not move or resize shapes.
+
+6. **Footer numerator vs. XML file number** — if slides are deleted from the template,
+   XML file numbers no longer equal deck position. Always set footer to deck position.
+
+---
+
+## Using template icon assets (slides 20-32)
+
+The canonical template contains 13 "asset slides" (slides 20-32) that are never copied into
+the final deck. They hold reusable vector icon groups and infographic shapes.
+
+### What's available
+
+| Template slide | Contents |
+|---|---|
+| 20 | Infographic elements — arrows, pie/donut charts, process bars, speech bubbles |
+| 21 | World maps (5 styles) + globe icons + location pins |
+| 22 | Flowchart / process-flow / org-chart shapes and timeline diagrams |
+| 23 | Gantt chart templates (month x phase x task) |
+| 24 | Business infographic shapes — gears, puzzle pieces, target circles, lightbulb, trophy |
+| 25 | Additional infographic shapes — funnels, pyramids, step diagrams, venn diagrams |
+| 26 | Icon usage instructions (skip — not for pipeline use) |
+| 27 | Educational Icons (left) + Medical Icons (right) |
+| 28 | Business Icons (left) + Teamwork Icons (right) |
+| 29 | Help & Support Icons (left) + Avatar Icons (right) |
+| 30 | Creative Process Icons (left) + Performing Arts Icons (right) |
+| 31 | Nature Icons |
+| 32 | SEO & Marketing Icons |
+
+All are vector (custGeom bezier paths inside grpSp groups) — fully scalable and recolorable.
+Visual thumbnails: `../_shared/icon-catalog/slide-{N}.jpg`
+
+### How to use
+
+Identify the icon by viewing the thumbnail and counting its reading-order position
+(left-to-right, top-to-bottom, 1-based). For split slides (27-30), left = first category,
+right = second category (split at x = 6,000,000 EMU).
+
+List icons on a slide:
+```
+python3 ../_shared/pptx-templates/icon-extract.py list 28 --side left
+python3 ../_shared/pptx-templates/icon-extract.py list 28 --side right
+```
+
+Inject an icon into a target slide:
+```
+python3 ../_shared/pptx-templates/icon-extract.py inject 28 3 \\
+    artifacts/unpacked/ppt/slides/slide7.xml \\
+    700000 1200000 --cx 500000 --cy 500000 --side left
+```
+
+Key XML facts:
+- Each icon is a grpSp block; its outer grpSpPr/a:xfrm controls position/size.
+- a:off x/y = position (914,400 EMU = 1 inch).
+- a:ext cx/cy = rendered size. Change only this to resize; leave chOff/chExt alone.
+- To recolor: replace all srgbClr val inside the group with your target hex.
+
+EMU reference: full slide = 12,192,000 x 6,858,000 | 1 cm ~= 360,000 | icon native ~= 489,000
+
+When to use icons: section dividers, feature comparison rows, timeline milestones, cover decoration.
+One icon per concept maximum — don't crowd slides.
+"""
 
 files['agents/tech-analyst/CLAUDE.md'] = """# Tech Analyst
 
