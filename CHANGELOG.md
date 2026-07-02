@@ -4,6 +4,25 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-02] — Scaffold Smoke Test
+
+### Added
+
+- `test/smoke-test.sh`: smoke test that runs `init-pipeline.sh` for all six
+  pipeline types (`research`, `software`, `study`, `coding`, `tech`,
+  `explore`) in isolated temp directories and asserts that the critical
+  orchestration files are present. Catches scaffold-generation regressions
+  (e.g. Python `SyntaxError`) that `shellcheck` / `markdownlint` cannot
+  detect. Exit code 0 = all pass, 1 = any failure.
+- CI (`ci.yml`): new `smoke-test` job runs `bash test/smoke-test.sh` on
+  every push/PR to `main`, alongside the existing `shellcheck` and
+  `markdownlint` jobs.
+- `CLAUDE.md`: documented the smoke-test requirement under "Repository
+  conventions" and updated the "When editing init-pipeline.sh" guidance to
+  reference `bash test/smoke-test.sh` instead of manual ad-hoc testing.
+
+---
+
 ## [2026-07-01] — Image Caption Typography + Scaffold Generation Fix
 
 ### Fixed (broken scaffold generation — research/tech pipelines could not be created)
