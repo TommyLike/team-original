@@ -38,6 +38,11 @@ Claude Code: `Read CLAUDE.md and start the pipeline`.
 - **CHANGELOG.md**: Every commit or PR that changes functionality MUST
   update `CHANGELOG.md`. Group entries by date, describe what changed per
   commit. Use the existing date-heading format.
+- **Smoke test**: Every commit that touches `init-pipeline.sh` MUST pass
+  the scaffold smoke test before submission. Run it locally with
+  `bash test/smoke-test.sh`. The test scaffolds all six pipeline types in
+  temp directories and asserts that the critical orchestration files are
+  generated without error. CI also runs this test automatically on every PR.
 
 ## Session startup (for generated pipeline projects)
 
@@ -57,8 +62,8 @@ No separate command needed — detection runs automatically on session start.
   avoid heredoc escaping issues
 - Keep Python-generated content in the `PYEOF` blocks — do not use shell
   heredocs for multi-line files with special characters
-- Test by running `./init-pipeline.sh research` in a temp directory and
-  verify all files are generated correctly
+- After editing, run `bash test/smoke-test.sh` to verify all six pipeline
+  types scaffold correctly (see **Smoke test** under Repository conventions)
 
 ## Adding a new pipeline
 

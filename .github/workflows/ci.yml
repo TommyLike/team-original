@@ -27,3 +27,11 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v17
         with:
           globs: '**/*.md'
+
+  smoke-test:
+    name: Scaffold Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run scaffold smoke test
+        run: bash test/smoke-test.sh
