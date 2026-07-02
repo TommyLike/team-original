@@ -56,74 +56,119 @@ block. When Claude Code starts in a pipeline project:
 
 No separate command needed — detection runs automatically on session start.
 
+## Architecture
+
+The scaffolder is split into three parts:
+
+- **`init-pipeline.sh`** — thin dispatcher (~290 lines). Sets `SCRIPT_DIR` /
+  `ASSETS_DIR` / `TEMPLATES_DIR`, sources `lib/common.sh`, then a `case`
+  block per pipeline. Each case does only the **dynamic** setup: copies the
+  static scaffold with `copy_template <type>`, makes empty working dirs,
+  creates empty artifact placeholders, writes `CLAUDE-RESUME.md`, and prints
+  the summary.
+- **`lib/common.sh`** — shared shell helpers: `usage`, `copy_template`,
+  `init_pipeline_log`, `init_empty_artifacts`, `write_resume_file`,
+  `ensure_fonts`, `install_richtext_assets`. Sourced by `init-pipeline.sh`;
+  relies on `ASSETS_DIR` / `TEMPLATES_DIR` being exported by the caller.
+- **`templates/<type>/`** — the **static payload** for each pipeline: agent
+  instruction files (`agents/<name>/CLAUDE.md`), the orchestration
+  `CLAUDE.md`, `input.md`, `COWORK.md`, `docs/STEP7-GUIDE.md`, etc. These
+  are plain files, copied verbatim into the generated project by
+  `copy_template`. This is the source of truth for all static content.
+
+> **History**: static content used to be embedded inside the shell script as
+> Python `files = {}` dicts written via `python3 << 'PYEOF'` heredocs. That
+> made the script ~5700 lines, unreadable, and prone to
+> `SyntaxError: unterminated string literal` when content strings were edited.
+> Externalizing to `templates/` eliminated that entire class of bug.
+
 ## When editing init-pipeline.sh
 
-- The script generates agent instruction files via embedded Python to
-  avoid heredoc escaping issues
-- Keep Python-generated content in the `PYEOF` blocks — do not use shell
-  heredocs for multi-line files with special characters
-- After editing, run `bash test/smoke-test.sh` to verify all six pipeline
-  types scaffold correctly (see **Smoke test** under Repository conventions)
+- **Edit content in `templates/`, not the shell script.** To change an
+  agent's instructions or an orchestration guide, edit the corresponding
+  file under `templates/<type>/`. The shell script no longer contains any
+  scaffold content.
+- Only touch `init-pipeline.sh` / `lib/common.sh` for **dynamic behavior**
+  (which dirs to create, which artifacts to init, the resume file, summary
+  echo). Both must pass `shellcheck`.
+- After any change, run `bash test/smoke-test.sh` to verify all six pipeline
+  types scaffold correctly (see **Smoke test** under Repository conventions).
 
 ## Adding a new pipeline
 
-When adding a new pipeline type to `init-pipeline.sh`:
+When adding a new pipeline type:
 
-1. **Update `usage()`** — add the new pipeline name to the help text
-2. **Add a new `case` block** before the `*)` fallback
-3. **Update `README.md`**: add to the pipeline table, add a flow diagram
+1. **Create `templates/<name>/`** — add the orchestration `CLAUDE.md`, the
+   `agents/<name>/CLAUDE.md` instruction files, `input.md`, and any other
+   static files (`COWORK.md`, `docs/STEP7-GUIDE.md`, …) as plain files.
+2. **Update `usage()`** in `lib/common.sh` — add the new name to help text.
+3. **Add a `case` block** in `init-pipeline.sh` before the `*)` fallback
+   (see checklist below).
+4. **Update `README.md`**: add to the pipeline table, add a flow diagram
    section, update the generated project structure if needed, increment
-   the count ("six pipelines" → "seven pipelines", etc.)
-4. **Update `CLAUDE.md`** (this file): add to the available pipelines list
-5. **Update `CHANGELOG.md`**: log the addition under the current date
+   the count ("six pipelines" → "seven pipelines", etc.).
+5. **Update `CLAUDE.md`** (this file): add to the available pipelines list.
+6. **Update `CHANGELOG.md`**: log the addition under the current date.
 
 ### Case block checklist
 
-Each new pipeline case must:
+Each new pipeline case is short — it does only dynamic setup:
 
-- Create `agents/<name>/` directories for each agent
-- Create `artifacts/` placeholder files (`: > artifacts/...`)
-- Write `input.md` template via shell heredoc
-- Write `CLAUDE-RESUME.md` with current status
-- Write all agent instruction files + the orchestration `CLAUDE.md` via
-  `python3 << 'PYEOF'` (follow the `files = {}` pattern)
-- Print a summary `echo` block (pipeline name, steps, cost estimate, next steps)
+- `copy_template <name>` — copies everything static from `templates/<name>/`
+- `mkdir -p …` for empty working dirs not carried by templates
+  (e.g. `artifacts/src`, `input/pdf`, `diagrams/src`)
+- `init_pipeline_log` and `init_empty_artifacts …` for the empty artifacts
+- `write_resume_file "<next step>" "<body>"` for `CLAUDE-RESUME.md`
+- `install_richtext_assets` if the pipeline produces PDF/PPTX/Word output
+- a summary `echo` block (pipeline name, steps, cost estimate, next steps)
 
 ### Shared components
 
-When two or more pipelines use the same agent or output recipe:
-
-- **Agent files** (e.g. `paper-analyst`, `devils-advocate`): copy the
-  `files['agents/<name>/CLAUDE.md']` entry verbatim between case blocks.
-  When fixing a bug in one copy, fix ALL copies.
-- **PDF generation recipe**: the HTML→Chromium recipe in the Step 7
-  output gate must stay identical across `research`, `tech`, and `explore`.
-  It bakes in the default font stack (Source Han Serif SC / Source Serif 4),
-  the opt-in storytelling-tone step, and the rights-footer step — keep all
-  three copies in sync.
-- **COWORK.md / STEP7-GUIDE.md**: shared between `research` and `tech`.
-  When adding to a new case, copy from an existing case and update only
-  artifact name references (e.g. `03-narrative.md` → `04-narrative.md`).
+- **Agent files** (e.g. `paper-analyst`, `devils-advocate`,
+  `report-writer`, `narrative-architect`): these live as **separate files
+  per pipeline** under `templates/<type>/agents/…` and are **per-pipeline
+  tailored variants**, NOT identical copies. They share a role/section
+  skeleton, but the domain content is deliberately customized (e.g.
+  `devils-advocate` attacks a *technology assessment* in `tech` but audits
+  *knowledge coverage* in `explore`; `report-writer` emits a research report
+  in `research` vs a maturity/competitive assessment in `tech`). Artifact
+  names and numbering also differ by design. So do NOT blindly copy one over
+  another. When fixing a bug common to all variants (a wrong shared artifact
+  path, a broken instruction in every copy), audit and fix each template
+  file — but preserve each variant's intentional wording.
+- **PDF generation recipe**: the HTML→Chromium recipe embedded in the Step 7
+  output gate must stay identical across `templates/research`,
+  `templates/tech`, and `templates/explore`. It bakes in the default font
+  stack (Source Han Serif SC / Source Serif 4), the opt-in storytelling-tone
+  step, and the rights-footer step — keep all three copies in sync.
+- **COWORK.md / STEP7-GUIDE.md**: shared between `templates/research` and
+  `templates/tech` (byte-identical). When adding to a new pipeline, copy the
+  file and update only artifact-name references.
 
 ### Rich-text assets (`assets/`)
 
-- `ensure_fonts()` (top of `init-pipeline.sh`) installs the default fonts on
-  every run: **Source Han Serif SC** (CJK) + **Source Serif 4** (Latin). It is
-  idempotent and never aborts scaffolding on failure.
-- `install_richtext_assets()` copies `assets/brand/rights.template.md`, copies the
-  full boss_dai corpus (style guide + ~530 articles) into `docs/boss_dai/`, and
-  generates `docs/STORYTELLING-REFERENCE.md` (project-relative paths only). The
-  corpus is bundled so the generated project is self-contained and does not depend
-  on the team-original repo's absolute path. Call it from any new pipeline that
-  produces PDF/PPTX/Word output.
-- Both helpers rely on `SCRIPT_DIR`/`ASSETS_DIR` to locate `assets/` regardless
-  of the current working directory.
+- `ensure_fonts()` (in `lib/common.sh`) installs the default fonts on every
+  run: **Source Han Serif SC** (CJK) + **Source Serif 4** (Latin). Idempotent;
+  never aborts scaffolding on failure.
+- `install_richtext_assets()` copies `assets/brand/rights.template.md`, copies
+  the full boss_dai corpus (style guide + ~530 articles) into `docs/boss_dai/`,
+  and generates `docs/STORYTELLING-REFERENCE.md` (project-relative paths only).
+  The corpus is bundled so the generated project is self-contained. Call it
+  from any new pipeline that produces PDF/PPTX/Word output.
+- Both helpers rely on `ASSETS_DIR` to locate `assets/` regardless of the
+  current working directory.
+
+### `templates/` is payload, not repo docs
+
+`templates/**` is excluded from `markdownlint` (see
+`.markdownlint-cli2.jsonc`) — it is content delivered into generated
+projects, not documentation of this repo, and does not follow the repo's
+markdown style. Linting/formatting the payload is a separate deferred
+decision, not a requirement for changes here.
 
 ### Known design debt
 
-- The research/tech case blocks share ~80% of their Layer-1 research
-  engine (question-architect, parallel researchers, analyst, DA,
-  report-writer). Phase 2 (deferred) would lift these into shared shell
-  functions to eliminate copy-paste maintenance.
-- `COWORK.md` and `docs/STEP7-GUIDE.md` are duplicated between research
-  and tech cases. A future refactor should emit them from a shared block.
+- `templates/research` and `templates/tech` still duplicate ~80% of their
+  Layer-1 research-engine agents and their `COWORK.md` / `STEP7-GUIDE.md`.
+  Now that content is in plain files, a future refactor could share them via
+  a `templates/_shared/` dir + a copy/compose step in `copy_template`.

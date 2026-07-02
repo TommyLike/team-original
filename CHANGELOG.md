@@ -4,6 +4,71 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-02] — Externalize Scaffold Content to templates/
+
+### Changed (major refactor — no behavior change)
+
+- Split the 5739-line `init-pipeline.sh` into three parts:
+  - `init-pipeline.sh` (~290 lines) — thin dispatcher: per-pipeline `case`
+    block doing only dynamic setup (`copy_template`, empty dirs, artifact
+    placeholders, `CLAUDE-RESUME.md`, summary echo).
+  - `lib/common.sh` (~130 lines) — shared shell helpers (`usage`,
+    `copy_template`, `init_pipeline_log`, `init_empty_artifacts`,
+    `write_resume_file`, `ensure_fonts`, `install_richtext_assets`).
+  - `templates/<type>/` — all static scaffold content (58 agent/orchestration
+    files + input templates) extracted from the old embedded Python
+    `files = {}` blocks into plain files, the new source of truth.
+- The old `python3 << 'PYEOF'` heredocs that embedded content as Python
+  strings are gone. This removes the entire `SyntaxError: unterminated string
+  literal` class of bug and makes the content readable, diffable, and
+  editable as normal files.
+- **Verified behavior-preserving**: all six pipelines were generated before
+  and after the refactor and diffed **byte-identical** (file contents AND
+  full directory trees, including empty dirs). Extraction was done
+  programmatically with round-trip verification.
+- `.markdownlint-cli2.jsonc`: added `templates/**` to ignores — the payload
+  is delivered content, not repo documentation, and does not follow the
+  repo's markdown style. (Enabling lint/format on the payload is a separate
+  deferred decision.)
+- `CLAUDE.md`: rewrote the architecture / "When editing" / "Adding a new
+  pipeline" / "Shared components" sections to describe the templates-based
+  structure; replaced the PYEOF/`files = {}` guidance.
+
+---
+
+## [2026-07-02] — Triple-Quote Hardening + Shared-Agent Doc Fix
+
+### Changed (root-cause fix for the SyntaxError class of regressions)
+
+- Converted the last 6 `files['...']` assignments in `init-pipeline.sh`
+  from single-/double-quoted single-line strings to triple-quoted strings
+  (`agents/analyst`, `agents/narrative-architect`, and the `COWORK.md` +
+  `docs/STEP7-GUIDE.md` pairs in both `research` and `tech`). Single-quoted
+  strings cannot span physical lines, so editing them by inserting a real
+  newline caused `SyntaxError: unterminated string literal` and aborted the
+  whole scaffold — the exact regression fixed reactively in the previous PR.
+  All 52 `files[]` entries are now triple-quoted. The conversion was done
+  programmatically and verified to produce **byte-identical** generated
+  output (research + tech projects diffed clean).
+- `CLAUDE.md`: added a rule under "When editing init-pipeline.sh" requiring
+  all `files[]` entries to use triple-quoted strings, to prevent the
+  single-quoted multi-line regression from recurring.
+
+### Fixed (misleading maintenance guidance)
+
+- `CLAUDE.md` "Shared components" claimed the shared agents
+  (`paper-analyst`, `devils-advocate`, `report-writer`,
+  `narrative-architect`) are copied "verbatim" and must be kept identical.
+  An audit showed they are in fact **intentional per-pipeline variants**
+  (e.g. `devils-advocate` attacks a tech assessment in `tech` but audits
+  knowledge coverage in `explore`), with deliberately different content and
+  artifact numbering. Rewrote the guidance to describe them as tailored
+  variants sharing a skeleton: fix structural/mechanical bugs across all
+  copies, but preserve each variant's intentional wording. No functional
+  drift bug was found — this is a documentation-accuracy fix.
+
+---
+
 ## [2026-07-02] — Scaffold Smoke Test
 
 ### Added
