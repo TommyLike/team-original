@@ -91,6 +91,20 @@ ensure_fonts() {
     return 0
 }
 
+# Bundle the technical-article visual-style guide into docs/. Used by the explore
+# pipeline's visual-enhancer to keep technical-topic illustrations in the
+# "Visual Guide" style (see assets/articles/technology/image-style.md). Never
+# aborts scaffolding on failure.
+install_tech_visual_style() {
+    local style_src="$ASSETS_DIR/articles/technology/image-style.md"
+    mkdir -p docs
+    if [ -f "$style_src" ]; then
+        cp -f "$style_src" docs/image-style.md 2>/dev/null || echo "  [assets] warn: image-style copy failed"
+    else
+        echo "  [assets] technology/image-style.md not found — skipping visual-style bundle"
+    fi
+}
+
 # Drop per-project brand + storytelling reference files into docs/. Call from
 # pipelines that produce rich-text output (PDF/PPTX/Word). Requires docs/ to exist.
 install_richtext_assets() {

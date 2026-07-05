@@ -4,6 +4,48 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-05] — Technical Visual-Guide Illustration Style
+
+### Added (technical article + illustration style reference)
+
+- Archived 6 reference articles (Maarten Grootendorst's "A Visual Guide to ..."
+  series: quantization, MoE, Mamba, reasoning LLMs, LLM agents, diffusion) under
+  `assets/articles/technology/sources/` — cleaned markdown + image manifests +
+  a representative image sample per article.
+- `assets/articles/technology/image-style.md` — a distilled, executable spec for
+  the "Visual Guide" illustration style: palette (with hex), rounded-box + thick-
+  black-outline shape language, one-color-per-concept encoding, annotation
+  conventions, and a **reusable Gemini STYLE prompt block**. Verified with
+  `gemini-3-pro-image`: the same STYLE block produced consistent, clearly-labeled
+  diagrams across three test topics (attention / MoE / quantization) — MoE and
+  quantization came out near-identical to the source figures.
+- `assets/articles/technology/rule.md` — distilled two new writing sections from
+  the same articles: "讲解：自底向上建立直觉" (concept-sequencing techniques —
+  problem-first opening, simple-to-complex ordering, up-front decomposition map,
+  anchoring abstractions to concrete systems, question-titled sections,
+  intuition-over-completeness) and "用图解释：Visual Guide 手法" (visual-explanation
+  method). Version bumped to v0.3.
+
+### Changed (explore pipeline wiring)
+
+- `lib/common.sh`: new `install_tech_visual_style()` helper that bundles
+  `image-style.md` into a generated project's `docs/`.
+- `init-pipeline.sh` (explore case): calls `install_tech_visual_style` so explore
+  projects ship `docs/image-style.md` (explore-only — the pipeline with the
+  visual-enhancer).
+- `templates/explore/agents/visual-enhancer/CLAUDE.md`: for technical topics,
+  images now follow an explicit **source priority** — first try a real figure
+  from a credible source (paper / official docs / authoritative blog / Wikimedia,
+  cited); only if none exists, AI-generate, and then it MUST follow the bundled
+  `docs/image-style.md` (append its STYLE block to every prompt) using
+  `gemini-3-pro-image` — verified to render short labels reliably, so GPT Image
+  is no longer required for labeled Visual-Guide diagrams.
+- `image-style.md` / `rule.md`: added the same source-priority rule (prefer real
+  authoritative images with attribution; AI generation is the styled fallback).
+- `CLAUDE.md`: documented `install_tech_visual_style()` under Rich-text assets.
+
+---
+
 ## [2026-07-02] — Externalize Scaffold Content to templates/
 
 ### Changed (major refactor — no behavior change)

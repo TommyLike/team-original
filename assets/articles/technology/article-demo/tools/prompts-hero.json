@@ -1,0 +1,3 @@
+{
+"hero": "CONTENT: A wide banner-style conceptual diagram for an article titled 'How Ray turns one function call into cross-machine collaboration'. On the LEFT, a single small purple rounded box labeled \"@ray.remote def A()\" (a single-machine function). A big bold black arrow points RIGHT, fanning out into a cluster: three dashed-teal rounded \"Node\" containers, each holding a small purple \"Worker\" and a small teal \"Object Store\", with thin black arrows flowing between them. Above the arrow a short dark-red caption: \"one decorator, and it runs across the whole cluster\". Keep it clean and horizontal, lots of whitespace, banner aspect ratio (wide)."
+}
