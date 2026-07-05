@@ -252,6 +252,7 @@ case "$1" in
 
         copy_template explore
         install_richtext_assets
+        install_tech_visual_style
         mkdir -p artifacts/versions memory papers images
 
         echo "# Pipeline log" > artifacts/00-pipeline-log.md

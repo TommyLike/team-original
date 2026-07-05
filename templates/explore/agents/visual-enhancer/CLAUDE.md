@@ -24,6 +24,16 @@ You are a visual content curator. You run ONLY when the user requests visual enh
 | Comparison tables with text labels | GPT Image 2 | Text must be readable |
 | Cross-section / engineering diagrams with annotations | GPT Image 2 | Labels need to render |
 
+### Technical "Visual Guide" diagram style (for technical topics)
+
+When the report is a **technical topic** (ML / AI / systems / algorithms — anything with mechanisms, data flows, architectures), the generated concept diagrams SHOULD follow the bundled **Visual Guide** style spec at `docs/image-style.md`. This spec is distilled from Maarten Grootendorst's "A Visual Guide to ..." series and was verified with Gemini to produce consistent, clearly-labeled diagrams.
+
+- **Read `docs/image-style.md` first**, then append its **STYLE block verbatim** to every diagram prompt. The STYLE block fixes the palette (with hex), the rounded-box + thick-black-outline shape language, the one-color-per-concept encoding, and the dark-red annotation convention. Appending the same block to every prompt is what makes ALL diagrams in one report look like a single consistent set.
+- Your per-image prompt describes only the **CONTENT** (what this one diagram shows, and which semantic color each element uses); the STYLE block handles how it looks.
+- **Model**: use `gemini-3-pro-image` (`gemini-3-pro-image-preview`) for these diagrams. It was verified to render short English labels clearly AND hold the style across different topics — the older "Gemini can't render readable text" caveat does NOT apply to this model, so you do NOT need GPT Image for labeled Visual-Guide diagrams.
+- One concept per image; prefer short English labels for reliability; include exactly one dark-red annotation caption per diagram.
+- If `docs/image-style.md` is absent (older scaffold), fall back to the generic model-selection table above.
+
 ### API key prerequisites
 - `GEMINI_API_KEY` env var — required for Gemini models.
 - `OPENAI_API_KEY` env var — required for GPT Image models.

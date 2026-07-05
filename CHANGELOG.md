@@ -4,6 +4,40 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-05] — Technical Visual-Guide Illustration Style
+
+### Added (technical article + illustration style reference)
+
+- Archived 6 reference articles (Maarten Grootendorst's "A Visual Guide to ..."
+  series: quantization, MoE, Mamba, reasoning LLMs, LLM agents, diffusion) under
+  `assets/articles/technology/sources/` — cleaned markdown + image manifests +
+  a representative image sample per article.
+- `assets/articles/technology/image-style.md` — a distilled, executable spec for
+  the "Visual Guide" illustration style: palette (with hex), rounded-box + thick-
+  black-outline shape language, one-color-per-concept encoding, annotation
+  conventions, and a **reusable Gemini STYLE prompt block**. Verified with
+  `gemini-3-pro-image`: the same STYLE block produced consistent, clearly-labeled
+  diagrams across three test topics (proof images in
+  `assets/articles/technology/style-tests/`).
+- `assets/articles/technology/rule.md` — new section 5 "用图解释：Visual Guide
+  手法" distilling the visual-explanation writing technique; version bumped to v0.2.
+
+### Changed (explore pipeline wiring)
+
+- `lib/common.sh`: new `install_tech_visual_style()` helper that bundles
+  `image-style.md` into a generated project's `docs/`.
+- `init-pipeline.sh` (explore case): calls `install_tech_visual_style` so explore
+  projects ship `docs/image-style.md` (explore-only — the pipeline with the
+  visual-enhancer).
+- `templates/explore/agents/visual-enhancer/CLAUDE.md`: for technical topics,
+  generated diagrams now follow the bundled `docs/image-style.md` (append its
+  STYLE block to every prompt) using `gemini-3-pro-image` — verified to render
+  short labels reliably, so GPT Image is no longer required for labeled
+  Visual-Guide diagrams.
+- `CLAUDE.md`: documented `install_tech_visual_style()` under Rich-text assets.
+
+---
+
 ## [2026-07-02] — Externalize Scaffold Content to templates/
 
 ### Changed (major refactor — no behavior change)
