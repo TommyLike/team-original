@@ -146,12 +146,16 @@ Domain-agnostic research lenses work for any subject.
 
 ```text
 .
-├── init-pipeline.sh          # Main scaffold script
+├── init-pipeline.sh          # Thin dispatcher (one case block per pipeline)
+├── lib/common.sh             # Shared shell helpers (copy_template, fonts, …)
+├── templates/                # Static scaffold payload, one dir per pipeline
+│   └── <type>/               # Agent CLAUDE.md files + orchestration + inputs
+├── test/smoke-test.sh        # Scaffolds all six pipelines, asserts key files
 ├── assets/                   # Fonts + brand + storytelling source (see below)
 │   ├── fonts/                # Source Han Serif SC (CJK) + Source Serif 4 (Latin)
 │   ├── brand/                # rights.template.md — footer declaration template
 │   └── articles/boss_dai/    # Storytelling corpus + dai-writing-style.md guide
-├── .github/workflows/ci.yml  # CI: shellcheck + markdownlint
+├── .github/workflows/ci.yml  # CI: shellcheck + markdownlint + smoke test
 ├── CLAUDE.md                 # AI assistant guide
 ├── README.md
 ├── CHANGELOG.md              # Version history
