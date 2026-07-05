@@ -1,0 +1,31 @@
+# [openEuler Summit 2023｜邀您参观CHAOSS展台](https://mp.weixin.qq.com/s/y807HT6fPZOv3mPMPI7LmA)
+
+[OpenAtom openEuler](javascript:void%280%29;)*2023-12-09 23:31:02*
+
+![](https://mmbiz.qpic.cn/mmbiz_gif/OCxOD3xB4DXrqmq9vT2jqX1uAh8Jjl72AcmWGAdsOgibKPPicGZIuEobwNa0n4oia1aHxf4Yn12JMjL0SmHQwT09A/640?wx_fmt=gif&wxfrom=5&wx_lazy=1)
+
+openEuler Summit - openEuler 社区年度旗舰会议，是开放原子开源基金会旗下 openEuler 社区发起的年度开源操作系统峰会。openEuler 专注核心技术和全场景能力创新，构建多样性计算、智能计算支持的基础软件能力。通过开源开放，不断探索科技创新的边界，驱动物理世界与数字世界的深度融合。
+
+本次大会，openEuler社区非常荣幸能够邀请到CHAOSS，并在现场设置CHAOSS展台。未来openEuler将与CHAOSS展开进一步的合作，共同促进开源社区健康发展。
+
+**关于CHAOSS**
+
+CHAOSS 项目由Linux 基金会发起，专注于创建指标、指标模型和软件，以更好地了解全球范围内的开源社区健康状况。
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMaeT6FCUfTvZzcceXIVgjxicyEic15o6wcqA1sqQXrvvB0ibXdvJmiaHKPq4iclZrgP1iaxYicpibpnTUgLTA/640?wx_fmt=png&from=appmsg)
+
+**关于openEuler**
+
+openEuler 是一个面向数字基础设施的操作系统，支持服务器、云计算、边缘计算、嵌入式等应用场景，支持多样性计算，致力于提供安全、稳定、易用的操作系统。通过为应用提供确定性保障能力，支持 OT 领域应用及 OT 与 ICT 的融合。
+
+**参会信息**
+
+时间：2023年12月15-16日
+
+地点：北京-国家会议中心
+
+如果您想现场参观CHAOSS展台，扫描下方二维码即可报名。
+
+![](https://mmbiz.qpic.cn/mmbiz_png/OCxOD3xB4DUCrpZnYbLSMssNIc0P12EQ0r3AKMaiaqSAMXm2gJsfx1Eibgb8SnybAtE9wdicuiav6iayB6gnFLHVpAg/640?wx_fmt=png&from=appmsg&wxfrom=5&wx_lazy=1&wx_co=1)
+
+openEuler与你不见不散~

@@ -1,0 +1,21 @@
+# [【活动报名】openEuler Meetup 南京站--24.03 LTS 版本与社区创新技术分享](https://mp.weixin.qq.com/s/Z0-DMMMYlDupN4jUBFOFyg)
+
+[OpenAtom openEuler](javascript:void%280%29;)*2024-06-13 17:53:53广东*
+
+OpenAtom openEuler（简称"openEuler"） 24.03 LTS 版本刚刚发布，进一步了解新版本并与社区专家交流的机会来啦。就在6月21日，openEuler Meetup 南京站欢迎你来！ 
+
+本次活动由openEuler社区与润和软件主办，江苏鲲鹏·昇腾生态创新中心、易百纳技术社区协办，**将围绕openEuler 24.03 LTS 新特性及在AI、嵌入式、分布式上的创新进展进行深入分享和交流**，在现场还将提供实物上手体验哟！
+
+活动信息
+
+![](https://res.wx.qq.com/t/wx_fed/we-emoji/res/v1.3.10/assets/Expression/Expression_93@2x.png) **主办单位：**openEuler 社区、润和软件
+
+![](https://res.wx.qq.com/t/wx_fed/we-emoji/res/v1.3.10/assets/Expression/Expression_96@2x.png) **协****办组织：**易百纳技术社区
+
+? 时间：2024年6月21日 14:00-17:30
+
+?? 地点：江苏省南京市雨花台区软件大道168号 润和创智中心西二楼-商务会议室
+
+活动议程
+
+![](https://mmbiz.qpic.cn/mmbiz_png/jqTxnpIZ2mDPoDdI8LxjGUkn2ria6LmKibNzR1axXUE7fj9YjibMUiaBzOJrtQNkrbqGAonkzegolqwmEML7ISVJtA/640?wx_fmt=png&from=appmsg)

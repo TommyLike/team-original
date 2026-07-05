@@ -1,0 +1,54 @@
+# [RISC-V SIG 推出基于openEuler 的下游发行版 Eulaceura](https://mp.weixin.qq.com/s/4-lAfafDP-g9OHngkOvZlA)
+
+[OpenAtom openEuler](javascript:void%280%29;)*2022-12-08 21:00:00*
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMbj1Q0yAHJ4nibRuI0EEaaYJj5uIJssFSUKONnSaFibH8aFrJaIpvTwdMa1Z0DOiagvJaFwNiayh5ibayQ/640?wx_fmt=png)
+
+近日，openEuler RISC-V SIG 推出了一款基于 openEuler 的发行版-Eulaceura。这是首个基于 openEuler 开发的 RISC-V 架构的发行版，给 RISC-V 的开发者开箱即用的 RISC-V 系统环境，方便开发者进行各种创新项目的开发与验证。Eulaceura 目前提供 QEMU 虚拟机镜像，运行稳定、界面友好，方便大家基于欢迎大家试用。
+
+- 下载地址：repo.tarsier-infra.com
+- 项目地址：https://gitee.com/eulaceura
+
+## 友好的用户体验
+
+Eulaceura 使用的是麒麟信安的 Kiran 桌面环境，初始系统语言为中文，桌面美观简洁，用户体验优秀，Eulaceura 附带以下应用：
+
+- 邮件客户端：Evolution v3.38。
+- 网络浏览器 - Firefox：主要仓库版本 98.0.2，附加仓库版本 102.0.1，105 版本更新推送 - Chromium 浏览器：主要仓库版本为 101，附加仓库版本为 104，105 版本更新推送
+- Java：毕昇 JDK v11.0.14+9.
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMbj1Q0yAHJ4nibRuI0EEaaYJusjiazqydpteF8m60MXQzV7E5wm6GpzU704tQpHCGnTDOlbaSJCLWibg/640?wx_fmt=png)
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMbj1Q0yAHJ4nibRuI0EEaaYJ5cNSmmzXSsprIEib33apvLMhWfmgA6vyVOkiabNZDspFIzRHibNQwhX8A/640?wx_fmt=png)
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMbj1Q0yAHJ4nibRuI0EEaaYJ4C8G9bKDcr0IcJLAtEdSkmCBvOY2B67Hygcn0IyZTOW6UlaMAv9O8A/640?wx_fmt=png)
+
+## 发行计划与后续规划
+
+Eulaceura 每半年发布一个新版本，每个季度进行汇总更新和不定期小型更新。由于 openEler RISC-V 软件仓库在部分软件版本的选择上较为激进，处于一个滚动更新的状态，所以 Eulaceura 为了保持基础架构稳定，在软件包上会尽可能保持与当前 openEuler 其他架构版本的软件版本尽量保持一致，出现漏洞和问题时将通过增量更新的方式进行更新。在遇到向后移植比较困难的时候，Eulaceura 会发布新版本。
+
+Eulaceura 使用社区的原生解决方案，可以给 RISC-V 爱好者与学习者一个开箱即用的 RISC-V 实验环境、支持在 RISC-V 架构下各种社区项目的验证与落地。在未来，Eulaceura 计划让应用于不同开发板硬件的系统采用统一的镜像，达到硬件通用适配的目的。Eulaceura 也可以作为 RISC-V 硬件上长期运作的操作系统候选。
+
+## 服务应用
+
+得益于 openEuler 的基础，用户也可以在 RISC-V 开发版上启动一些服务：比如使用 Apache 启动网页服务、使用 MySQL 启动数据库服务。用户更可以使用 docker 容器引擎，建构 RISC-V 架构的容器映像，或者启动其它发行版、开发调试等。
+
+## 加群交流
+
+> ?
+> 
+> 如果您对 RISC-V 感兴趣，欢迎加入 RISC-V SIG 交流群，讨论更多关于 RISC-V 的更多内容，为推动 openEuler & RISC-V 生态贡献力量！
+> 
+> ?
+
+**![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMbj1Q0yAHJ4nibRuI0EEaaYJtmHLo7ibqcE8r2GhYooWurptkaa64A0MBWicMEWHOzTJhf5IRBF3UJgg/640?wx_fmt=png)**
+
+**中科院软件所吴伟微信 添加请备注 oerv**
+
+## 关于作者
+
+> ?
+> 
+> 杨延玲，中科院软件所 PLCT 实验室实习生，欧拉开源社区 RISC-V SIG 成员，目前在温州大学读研一，负责协助 RISC-V SIG 和 ROS SIG 的日常运营。
+> 
+> ?

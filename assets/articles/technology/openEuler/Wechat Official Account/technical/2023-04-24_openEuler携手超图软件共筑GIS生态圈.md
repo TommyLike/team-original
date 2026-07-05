@@ -1,0 +1,17 @@
+# [openEuler携手超图软件共筑GIS生态圈](https://mp.weixin.qq.com/s/RxL0uSC3E31iRD9lg8K2Yg)
+
+[OpenAtom openEuler](javascript:void%280%29;)*2023-04-24 19:44:00*
+
+![](https://mmbiz.qpic.cn/mmbiz_png/A0h5yD51CMaeQsfOgZjHRmBYnibTaGlfcEANf09Hjbnbe90JD3K1AspTgbu2mSuGhCvcosmicb31umNQNXTLxmxw/640?wx_fmt=png)
+
+近日，2023 SuperMap生态伙伴CTO峰会在山城重庆召开。openEuler安全委员会主席魏刚代表openEuler社区出席峰会，与大家分享了openEuler与超图软件的密切合作。
+
+![](https://mmbiz.qpic.cn/mmbiz_jpg/A0h5yD51CMaeQsfOgZjHRmBYnibTaGlfcoTU7tPIXaeOcjicebuMibFlUuEB2YASUKNUYLw9ibRCCBG01Tbz8TSTvw/640?wx_fmt=jpeg)
+
+早在2019年，openEuler便与超图软件结缘。其 SuperMap GIS平台正式通过基于鲲鹏处理器的 TaiShan 服务器和openEuler操作系统技术兼容性证明，2021 年 3 月，SuperMap GIS 平台获得鲲鹏 Huawei Validated 认证，此方案在操作系统层面采用了基于 openEuler 内核开发的银河麒麟新一代自主服务器操作系统，在性能、可靠性、安全性等方面进行了深度优化，充分发挥 SuperMap GIS 平台相关应用场景性能优势。
+
+本次峰会上，超图、武汉达梦数据库有限公司、北京海量数据技术股份有限公司、广州中望龙腾软件股份有限公司、北京人大金仓信息技术股份有限公司、openEuler、麒麟软件有限公司、飞腾信息技术有限公司、瀚高基础软件股份有限公司、统信软件技术有限公司等联合发布了“地理信息软件信创替代行动计划”。希望通过双方的合作，联合生态伙伴充分发挥科技创新引领的带动作用，同时也为社区注入新的活力，共筑GIS生态圈。
+
+openEuler社区未来将和伙伴一起，共同持续支持国内GIS产业的发展与壮大。
+
+![](https://mmbiz.qpic.cn/mmbiz_jpg/A0h5yD51CMaeQsfOgZjHRmBYnibTaGlfc0GicOuo0PnAR3Y45efYiaKbljfkr3sXerEPXZL9HPfsG1O3EU01okUSw/640?wx_fmt=jpeg)
