@@ -26,7 +26,12 @@ You are a visual content curator. You run ONLY when the user requests visual enh
 
 ### Technical "Visual Guide" diagram style (for technical topics)
 
-When the report is a **technical topic** (ML / AI / systems / algorithms — anything with mechanisms, data flows, architectures), the generated concept diagrams SHOULD follow the bundled **Visual Guide** style spec at `docs/image-style.md`. This spec is distilled from Maarten Grootendorst's "A Visual Guide to ..." series and was verified with Gemini to produce consistent, clearly-labeled diagrams.
+When the report is a **technical topic** (ML / AI / systems / algorithms — anything with mechanisms, data flows, architectures), apply this **source priority** for every image slot:
+
+1. **Prefer a real image from a credible source.** Before generating anything, try to find an authoritative real figure: the original paper's diagram (arXiv / conference), official docs / official blog / project README figures, reputable technical blogs, Wikipedia / Wikimedia, real benchmark charts, product screenshots. If a fitting, license-permitting real image exists, **use it and cite the source** (author + link). Real figures (especially paper diagrams and measured curves) carry authority and accuracy that a generated image cannot guarantee.
+2. **Only if no suitable real image exists, AI-generate** — and when you do, it **MUST** follow the bundled **Visual Guide** style spec at `docs/image-style.md` so the generated diagram matches the rest of the report. This spec is distilled from Maarten Grootendorst's "A Visual Guide to ..." series and was verified with Gemini to produce consistent, clearly-labeled diagrams.
+
+When AI-generating a technical diagram:
 
 - **Read `docs/image-style.md` first**, then append its **STYLE block verbatim** to every diagram prompt. The STYLE block fixes the palette (with hex), the rounded-box + thick-black-outline shape language, the one-color-per-concept encoding, and the dark-red annotation convention. Appending the same block to every prompt is what makes ALL diagrams in one report look like a single consistent set.
 - Your per-image prompt describes only the **CONTENT** (what this one diagram shows, and which semantic color each element uses); the STYLE block handles how it looks.

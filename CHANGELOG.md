@@ -17,10 +17,14 @@ All notable changes to the `team-original` project.
   black-outline shape language, one-color-per-concept encoding, annotation
   conventions, and a **reusable Gemini STYLE prompt block**. Verified with
   `gemini-3-pro-image`: the same STYLE block produced consistent, clearly-labeled
-  diagrams across three test topics (proof images in
-  `assets/articles/technology/style-tests/`).
-- `assets/articles/technology/rule.md` — new section 5 "用图解释：Visual Guide
-  手法" distilling the visual-explanation writing technique; version bumped to v0.2.
+  diagrams across three test topics (attention / MoE / quantization) — MoE and
+  quantization came out near-identical to the source figures.
+- `assets/articles/technology/rule.md` — distilled two new writing sections from
+  the same articles: "讲解：自底向上建立直觉" (concept-sequencing techniques —
+  problem-first opening, simple-to-complex ordering, up-front decomposition map,
+  anchoring abstractions to concrete systems, question-titled sections,
+  intuition-over-completeness) and "用图解释：Visual Guide 手法" (visual-explanation
+  method). Version bumped to v0.3.
 
 ### Changed (explore pipeline wiring)
 
@@ -30,10 +34,14 @@ All notable changes to the `team-original` project.
   projects ship `docs/image-style.md` (explore-only — the pipeline with the
   visual-enhancer).
 - `templates/explore/agents/visual-enhancer/CLAUDE.md`: for technical topics,
-  generated diagrams now follow the bundled `docs/image-style.md` (append its
-  STYLE block to every prompt) using `gemini-3-pro-image` — verified to render
-  short labels reliably, so GPT Image is no longer required for labeled
-  Visual-Guide diagrams.
+  images now follow an explicit **source priority** — first try a real figure
+  from a credible source (paper / official docs / authoritative blog / Wikimedia,
+  cited); only if none exists, AI-generate, and then it MUST follow the bundled
+  `docs/image-style.md` (append its STYLE block to every prompt) using
+  `gemini-3-pro-image` — verified to render short labels reliably, so GPT Image
+  is no longer required for labeled Visual-Guide diagrams.
+- `image-style.md` / `rule.md`: added the same source-priority rule (prefer real
+  authoritative images with attribution; AI generation is the styled fallback).
 - `CLAUDE.md`: documented `install_tech_visual_style()` under Rich-text assets.
 
 ---
