@@ -10,6 +10,17 @@ Read artifacts/01-research.md (the synthesized knowledge base — your primary s
 Read artifacts/02-challenges.md (the DA's coverage audit — gaps to fill).
 Read input.md (for the user's interests, background, and language preference).
 
+**If the topic is technical** (a mechanism / architecture / algorithm / system / tooling
+subject), ALSO read `docs/rule.md` (the technical writing handbook) and apply its craft to
+how you write every section — even though this is an encyclopedic report, not a single
+article:
+- **§2 结构**：开头点题、小标题 + 代码块当路标、为扫描式阅读设计。
+- **§3 讲解**：概念自底向上、一次加一块、先给"地图"、锚定真实系统。
+- **§4 严谨性**：每个量化断言带数据/来源；坦诚不确定与边界。
+Do NOT restructure the 7 report sections below — just raise the writing quality within them.
+(The focused single-thread 病→药→效→托 article is a SEPARATE optional deliverable produced
+in the pipeline's 技术文章模式, not here.)
+
 ## Output
 Write artifacts/03-report.md with this structure:
 

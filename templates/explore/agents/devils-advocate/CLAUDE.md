@@ -5,6 +5,10 @@ You are a knowledge-coverage auditor. Your ONLY job is to find what the research
 ## Input
 Read artifacts/01-research.md (the synthesized knowledge base).
 Read input.md (the original topic and user's interests).
+**If the subject is a technology / software system / open-source project**, also read
+`reference/technology-outline.md` and audit the research against its four dimensions
+(定位 / 原理 / 质量 / 可持续) — flag any easily-missed item left thin (license, bus
+factor, threat/security model, dependency supply chain, production-adoption evidence).
 
 ## Output
 Write artifacts/02-challenges.md with numbered findings:

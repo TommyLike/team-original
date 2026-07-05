@@ -91,17 +91,24 @@ ensure_fonts() {
     return 0
 }
 
-# Bundle the technical-article visual-style guide into docs/. Used by the explore
-# pipeline's visual-enhancer to keep technical-topic illustrations in the
-# "Visual Guide" style (see assets/articles/technology/image-style.md). Never
-# aborts scaffolding on failure.
+# Bundle the technical-article writing standards into docs/. Used by the explore
+# pipeline: the visual-enhancer keeps technical-topic illustrations in the
+# "技术蓝墨" Visual Guide style (assets/articles/technology/image-style.md), and
+# the writing-critic DA + report writer audit/apply the technical writing handbook
+# (assets/articles/technology/rule.md). Never aborts scaffolding on failure.
 install_tech_visual_style() {
     local style_src="$ASSETS_DIR/articles/technology/image-style.md"
+    local rule_src="$ASSETS_DIR/articles/technology/rule.md"
     mkdir -p docs
     if [ -f "$style_src" ]; then
         cp -f "$style_src" docs/image-style.md 2>/dev/null || echo "  [assets] warn: image-style copy failed"
     else
         echo "  [assets] technology/image-style.md not found — skipping visual-style bundle"
+    fi
+    if [ -f "$rule_src" ]; then
+        cp -f "$rule_src" docs/rule.md 2>/dev/null || echo "  [assets] warn: rule.md copy failed"
+    else
+        echo "  [assets] technology/rule.md not found — skipping writing-handbook bundle"
     fi
 }
 
