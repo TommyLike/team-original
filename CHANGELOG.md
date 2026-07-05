@@ -4,6 +4,71 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-05] — 病药效托 Skeleton, 技术蓝墨 Palette, Writing-Critic DA, Ray v3
+
+### Changed (technical writing handbook — `rule.md` → v0.4)
+
+- Added **§0 「文章骨架：病→药→效→托」** — an end-to-end narrative skeleton placed
+  before the craft sections. Maps 病/药/效/托 onto 起承转合 and onto the existing
+  handbook sections; redefines the technical "托" as an **honest trust signal**
+  (real-system anchoring + reproducible entry + candid boundaries), not a shill;
+  and swaps "大格局出" for "小切口进 → **通用直觉出**".
+- Expanded **§5 风格** with "借鉴叙事笔法：拿来 vs 不拿来" — borrows the dai
+  (饭桶戴老板) narrative craft that helps technical writing (concrete-scene opening,
+  one through-line question, per-section hook sentences, 剥削/deep-on-one-point,
+  克制/restraint) while explicitly **excluding** the parts that don't fit technical
+  articles (国运/时代/周期/人性/产业兴衰 grand sublimation, 闲笔 digressive openings,
+  history/politics analogies as main argument, heavy classical-style pastiche).
+
+### Changed (illustration spec — `image-style.md` → "技术蓝墨")
+
+- Replaced the vivid Grootendorst palette (鲜紫/品红/青绿, too attention-grabbing)
+  with a restrained **engineering palette**: one cool family (钢蓝 `#2F6FB0` /
+  淡蓝灰 `#D3E0EC` / 冷灰盒 `#EBEEF2` / 沉青 `#3F8F8A` / 灰绿 `#5A8F6B` / 墨黑
+  `#1B2430`) **plus one warm accent** (赭红 `#B0553F`) used at most twice per
+  diagram (one marker + one annotation). Grouping containers now use a dashed
+  muted-teal border only (no black outer box). The "one-color-per-concept" and
+  thick-outline discipline is kept; only the values changed.
+
+### Added (explore pipeline — 中档 upgrade + writing-craft DA gate)
+
+- **`writing-critic`** agent (`templates/explore/agents/writing-critic/`) — a NEW
+  writing-craft devil's advocate that audits the produced markdown against the
+  right standard by article type: **technical → `docs/rule.md`**, **general/narrative
+  → `docs/boss_dai/dai-writing-style.md`**. Emits BLOCKER/IMPROVE findings + a
+  PASS/REVISE verdict. It is a **mandatory gate**: the pipeline loops writer→critic
+  until PASS before rendering/illustration (成稿两边 markdown 没问题才继续).
+- **技术文章模式 (Step 4b, optional)** — reuses `knowledge-report-writer` in ARTICLE
+  mode to produce a focused single-thread 病→药→效→托 article (`artifacts/03-article.md`),
+  distinct from the encyclopedic report.
+- `knowledge-report-writer` now reads `docs/rule.md` and applies its structure/
+  explanation/rigor craft when the topic is technical.
+- `install_tech_visual_style()` (in `lib/common.sh`) now also bundles
+  `assets/articles/technology/rule.md` → `docs/rule.md` so the writing-critic and
+  report writer have the handbook available in generated projects.
+- `templates/explore/reference/technology-outline.md` — a MECE research-scope
+  checklist for technology / open-source project subjects (定位 / 原理 / 质量 /
+  可持续). Wired into `topic-architect` (cross-checks research scope, incl. license,
+  bus factor, threat model, supply chain) and the coverage devil's advocate (audits
+  against it). This governs research **coverage**; `docs/rule.md` governs writing
+  **craft** — the two dimensions are kept separate by design.
+- Orchestrator (`templates/explore/CLAUDE.md`) updated: pipeline diagram, model
+  table, agent roster, detailed Steps 4b/4.5, and the gate rule.
+
+### Added (article-demo — Ray v3)
+
+- `assets/articles/technology/article-demo/v3/` — the Ray article rewritten on the
+  病→药→效→托 skeleton: concrete-scene opening + per-section hooks; **adds the "效"**
+  (§六: what each of the three designs actually saves) and **"托"** (§七: real
+  adopters + a runnable minimal example + candid boundaries) that v2 lacked; ending
+  sublimates to transferable design intuition. All 10 diagrams regenerated in the
+  "技术蓝墨" palette (new `tools/gen-images-v3.py` + `prompts-*-v3.json`), fixing v2's
+  two figure bugs (small-object Y placement in stage 5; inconsistent node borders).
+  New `pdf-v3.css` matches the palette; `build-pdf.sh` takes an optional CSS arg.
+  Rendered `v3/Ray-architecture-v3.pdf` for the v1→v3 comparison.
+
+---
+
 ## [2026-07-05] — Technical Visual-Guide Illustration Style
 
 ### Added (technical article + illustration style reference)

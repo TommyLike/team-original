@@ -155,11 +155,14 @@ Each new pipeline case is short — it does only dynamic setup:
   and generates `docs/STORYTELLING-REFERENCE.md` (project-relative paths only).
   The corpus is bundled so the generated project is self-contained. Call it
   from any new pipeline that produces PDF/PPTX/Word output.
-- `install_tech_visual_style()` copies
-  `assets/articles/technology/image-style.md` into `docs/image-style.md`. This is
-  the "Visual Guide" illustration spec (palette + reusable Gemini STYLE prompt)
-  used by the **explore** pipeline's `visual-enhancer` for technical-topic
-  diagrams. Currently called only from the explore case.
+- `install_tech_visual_style()` bundles the technical-article **writing standards**
+  into `docs/`: `assets/articles/technology/image-style.md` → `docs/image-style.md`
+  (the "技术蓝墨" Visual Guide illustration spec — palette + reusable Gemini STYLE
+  prompt, used by the **explore** `visual-enhancer`) AND
+  `assets/articles/technology/rule.md` → `docs/rule.md` (the technical writing
+  handbook — 病→药→效→托 skeleton + craft, used by the explore `writing-critic` DA
+  and by `knowledge-report-writer` for technical topics). Currently called only
+  from the explore case.
 - These helpers rely on `ASSETS_DIR` to locate `assets/` regardless of the
   current working directory.
 

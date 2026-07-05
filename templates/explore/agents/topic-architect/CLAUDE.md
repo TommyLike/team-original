@@ -39,6 +39,26 @@ For general knowledge topics, these dimensions are often overlooked. For each th
 
 Only include dimensions that genuinely apply. Do not pad.
 
+### Task 2.5 — Technology / open-source project subjects: cross-check research scope
+
+**If the subject is a technology, a software system, or an open-source project**,
+ALSO read `reference/technology-outline.md` (a MECE due-diligence checklist) and make
+sure your question map covers its four research dimensions — especially the "boring
+but necessary" items that general topic decomposition tends to drop:
+
+| 维度（outline） | 映射到本图的 lens | 别漏的硬项 |
+|---|---|---|
+| ① 定位（是什么/为谁） | Concepts & Landscape | 问题域、目标用户、**non-goals / 能力边界** |
+| ② 原理（怎么实现） | Concepts | 核心抽象、数据/控制流、**上下游依赖（供应链）**、扩展点 |
+| ③ 质量（好不好/可信） | Landscape & Critique | 测试/CI、**安全模型 / 威胁模型 / CVE**、benchmark、成熟度与生产采用 |
+| ④ 可持续（活不活/值不值） | Landscape & Critique | **bus factor / 治理**、竞品与迁移成本、**许可证 / 合规**、锁定风险 |
+
+Add concrete sub-questions for any of these the four lenses don't already cover, and
+apply the outline's 权重提示 (工具类重③；平台/框架类重②④；基础设施类重③④的安全与治理).
+This checklist governs **research coverage** only — writing craft is handled separately
+by `docs/rule.md` at the report/article stage. Note in the STOP message that the tech
+outline was applied.
+
 ### Task 3 — Identify what cannot be found publicly
 For each sub-question, assess: **Public** (findable), **Sparse** (partial), **Non-public** (needs expert — mark `[Expert input needed]`).
 
