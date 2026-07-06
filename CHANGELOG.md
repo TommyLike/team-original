@@ -4,6 +4,45 @@ All notable changes to the `team-original` project.
 
 ---
 
+## [2026-07-06] — Storyline gate, mandatory technical covers, article visuals
+
+Driven by a review of a real `explore` run (sandbox-runtime): storytelling
+started without user confirmation, the "技术蓝墨" image style was not applied,
+and the focused article never got a cover unless the user asked.
+
+### Changed (storytelling is now a gate — `templates/{research,tech,explore}/CLAUDE.md`)
+
+- The shared **PDF-recipe storytelling step** no longer jumps straight into
+  rewriting prose. It now: (a) derives **3-4 candidate story-lines** from
+  `03-report.md` (each a hook + through-question + source sections), (b) **STOPs
+  for the user to pick/supplement**, (c) only then writes the narrative around
+  the confirmed spine. Kept byte-identical across all three pipelines.
+
+### Changed (`templates/explore/agents/visual-enhancer/CLAUDE.md`)
+
+- **Article is now a first-class visual target**: when `artifacts/03-article.md`
+  exists, the enhancer also illustrates it → `artifacts/03-article-illustrated.md`,
+  honoring the writer's `<!-- IMG: <slug> -->` slots.
+- **Cover is mandatory per deliverable** (`00-hero.png` for the report,
+  `00-article-hero.png` for the article) and happens by default, not on request.
+- **Technical topics use "技术蓝墨" for the WHOLE set including the cover** — the
+  STYLE block from `docs/image-style.md` is appended to the cover prompt too;
+  glossy/3D/dark "AI poster" covers are an explicit fail. Only general/narrative
+  topics use the warm editorial cover.
+- **Language no longer defaults to English** when the pipeline log is empty —
+  infer from the deliverable's body text.
+- Added a **Phase 4 self-check** (cover present, correct language, §6 style
+  compliance, centered `<img>` embeds, real-vs-generated ratio, provenance URLs).
+
+### Changed (`templates/explore/CLAUDE.md`)
+
+- **Pipeline log hardening**: `artifact-language` + `article-type` MUST be
+  written right after model confirmation (an empty log was the root cause of
+  English labels + wrong cover style). Step 5 now names the article as a second
+  illustrated deliverable.
+
+---
+
 ## [2026-07-05] — 病药效托 Skeleton, 技术蓝墨 Palette, Writing-Critic DA, Ray v3
 
 ### Changed (technical writing handbook — `rule.md` → v0.4)
