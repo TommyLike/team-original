@@ -40,6 +40,11 @@ and the focused article never got a cover unless the user asked.
   written right after model confirmation (an empty log was the root cause of
   English labels + wrong cover style). Step 5 now names the article as a second
   illustrated deliverable.
+- Added **Step 0.5 — Source Material Gathering** (Claude Code directly,
+  MANDATORY for open-source projects with repos): executes the 取材 mandate
+  after Step 0 STOP and before launching Step 1 researchers. Produces
+  `reference/source-material.md`, which becomes mandatory input for all four
+  researchers.
 
 ### Changed (`templates/explore/reference/technology-outline.md`)
 
@@ -49,14 +54,6 @@ and the focused article never got a cover unless the user asked.
   (`npm audit` / `cargo audit` / `trivy`), count code (`cloc` or `tokei`), and
   inventory test infrastructure. This lifts ② 原理 and ③ 质量 from web-only
   inference to repo-grounded evidence.
-
-### Changed (`templates/explore/CLAUDE.md`)
-
-- Added **Step 0.5 — Source Material Gathering** (Claude Code directly,
-  MANDATORY for open-source projects with repos): executes the outline's 取材
-  mandate after Step 0 STOP and before launching Step 1 researchers. Produces
-  `reference/source-material.md`, which becomes mandatory input for all four
-  researchers.
 
 ---
 
