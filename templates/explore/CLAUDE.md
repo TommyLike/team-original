@@ -14,11 +14,18 @@ When the user asks you to run the pipeline (or resume it), follow these steps in
 Step 0: Topic Architect (Opus) → artifacts/00-question-map.md
   → STOP: show question map + blind-spot checklist, wait for user confirmation
         ↓
+Step 0.5: Source Material Gathering (Claude Code directly, MANDATORY for
+          open-source projects) → reference/source-material.md
+          git clone --depth 1 to reference/src/, read key design docs, run
+          one audit, count code, inventory test infra. Per technology-outline.md
+          取材方法. SKIP if no public source repo.
+        ↓
 Step 1: Multi-Perspective Research (4 parallel Agent subagents, Sonnet)
   ├── History & Evolution   → artifacts/01a-research-history.md
   ├── Concepts & Frameworks → artifacts/01b-research-concepts.md
   ├── Current Landscape     → artifacts/01c-research-landscape.md
   └── Depth & Critique      → artifacts/01d-research-critique.md
+  All four MUST read reference/source-material.md if it exists.
         ↓
 Step 2: Synthesis (Claude Code writes directly) → artifacts/01-research.md
   → STOP: show synthesis + Knowledge Gap Map + surfaced key papers.
@@ -77,6 +84,7 @@ Step 5 (OPTIONAL — only if the user opts in): Visual Enhancer (Sonnet)
 | Step | Agent | Default model |
 |---|---|---|
 | 0 | Topic Architect | opus |
+| 0.5 | Source Material Gathering (for repos with source) | *(Claude Code directly)* |
 | 1a-1d | Researchers (x4, parallel) | sonnet |
 | 2.5 | Paper Analyst (optional) | sonnet |
 | 3 | Devil's Advocate | sonnet |
@@ -104,10 +112,11 @@ Keep this file updated at every step (see Pipeline log section). `artifact-langu
 | Step | Agent | Model | Reads | Writes |
 |---|---|---|---|---|
 | 0 | topic-architect | opus | input.md | artifacts/00-question-map.md |
-| 1a | researcher-history | sonnet | input.md + 00-question-map.md | artifacts/01a-research-history.md |
-| 1b | researcher-concepts | sonnet | input.md + 00-question-map.md | artifacts/01b-research-concepts.md |
-| 1c | researcher-landscape | sonnet | input.md + 00-question-map.md | artifacts/01c-research-landscape.md |
-| 1d | researcher-critique | sonnet | input.md + 00-question-map.md | artifacts/01d-research-critique.md |
+| 0.5 | *(Claude Code directly, for repos with source)* | — | technology-outline.md + repo URL from input.md | reference/source-material.md + reference/src/ |
+| 1a | researcher-history | sonnet | input.md + 00-question-map.md (+ reference/source-material.md if exists) | artifacts/01a-research-history.md |
+| 1b | researcher-concepts | sonnet | input.md + 00-question-map.md (+ reference/source-material.md if exists) | artifacts/01b-research-concepts.md |
+| 1c | researcher-landscape | sonnet | input.md + 00-question-map.md (+ reference/source-material.md if exists) | artifacts/01c-research-landscape.md |
+| 1d | researcher-critique | sonnet | input.md + 00-question-map.md (+ reference/source-material.md if exists) | artifacts/01d-research-critique.md |
 | 2 | *(Claude Code directly)* | — | 01a/b/c/d + input.md + 00-question-map.md | artifacts/01-research.md |
 | 2.5 | paper-analyst (optional) | sonnet | user-supplied paper list + 01-research.md | artifacts/01e-paper-analysis.md + papers/<id>-zh.md |
 | 3 | devils-advocate | sonnet | 01-research.md + input.md | artifacts/02-challenges.md |
@@ -147,11 +156,41 @@ The agent decomposes the broad topic into a comprehensive question map covering 
 
 For **technology / open-source project** subjects, the agent also cross-checks the scope against `reference/technology-outline.md` (a MECE due-diligence checklist: 定位 / 原理 / 质量 / 可持续) so the research covers the easily-missed items (license, bus factor, threat model, dependency supply chain). This governs research **coverage**; writing craft is handled later by `docs/rule.md`.
 
-**→ STOP**: Show the user the question map and blind-spot checklist. Ask for corrections or additions. If the user provides expert knowledge, write it into `artifacts/00-expert-input.md`. Wait for "go" before Step 1.
+**→ STOP**: Show the user the question map and blind-spot checklist. Ask for corrections or additions. If the user provides expert knowledge, write it into `artifacts/00-expert-input.md`. Wait for "go" before Step 0.5.
+
+### Step 0.5 — Source Material Gathering (MANDATORY for projects with source repos)
+
+**Only run this step if the topic is an open-source project / tool with a public source repository.** Skip if the topic is a pure concept, market, or theory with no code repo.
+
+Read `reference/technology-outline.md` 取材方法 section. Its mandate: ② 原理 (architecture / core mechanism / tech stack) and ③ 质量 (test coverage / code quality / dependency audit) **cannot be filled from web-only research** — researchers need ground-truth from the actual repository.
+
+**Execution (Claude Code directly, no subagent):**
+
+1. **Clone**: `git clone --depth 1 <repo-url> reference/src/`. If the repo URL is not in `input.md`, ask the user for it.
+2. **Read key design docs** (in priority order, skip files that don't exist):
+   - `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`, `GOVERNANCE.md`, `CODEOWNERS`
+   - `docs/` top-level (list files, read the 5 most relevant)
+   - `ARCHITECTURE.md`, `DESIGN.md`, `ROADMAP.md`, `rfcs/`, `proposals/`
+3. **Run one audit** (best effort, don't block on failure):
+   - `npm audit --production` / `cargo audit` / `pip-audit` / `trivy fs .` — whichever fits the project's ecosystem
+4. **Count code** (best effort): `cloc .` or `tokei .` or a quick `find . -name '*.ts' | xargs wc -l` — capture total lines, test lines, test/source ratio.
+5. **Inventory test infrastructure**: CI config file, test framework name, coverage badge presence.
+6. **Write `reference/source-material.md`** with:
+   - Key design docs read and their main architectural claims
+   - Audit result (pass/audit npm score/vulnerability count — or "no audit tool available")
+   - Code scale (total lines, test lines, language breakdown)
+   - Test infrastructure summary
+   - Notable findings from docs/code that web research would miss
+
+This artifact becomes a **mandatory input for all four Step 1 researchers** — they must read it before writing their output. It puts ground-truth under ② 原理 and ③ 质量, where web-only research hits a ceiling.
+
+**Quality gate**: `reference/source-material.md` must exist and contain concrete numbers or observations from the clone (not just "docs exist"). If the clone or audit fails, record the failure reason in the artifact — don't skip the step silently.
+
+**→ STOP**: tell the user what was gathered (repo size, key docs found, audit result). Then proceed to Step 1.
 
 ### Step 1 — Multi-Perspective Research (parallel)
 
-Launch all four researchers simultaneously. Pass the question map and any expert input to each.
+Launch all four researchers simultaneously. Pass the question map, any expert input, and — **if Step 0.5 produced `reference/source-material.md` — that file to every researcher** (the researcher agents don't auto-discover it; you must explicitly tell them to read it). Each researcher must ground ② 原理 and ③ 质量 findings in the cloned material where applicable, not purely in web sources.
 
 Quality gate after all four complete:
 - Each artifact must contain specific facts, named sources, dates, or URLs.
