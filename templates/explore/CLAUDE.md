@@ -87,7 +87,15 @@ Step 5 (OPTIONAL — only if the user opts in): Visual Enhancer (Sonnet)
 
 Ask: *"These are the default models. Reply 'confirm' to use them, or tell me any changes."*
 
-Wait for the user's reply. Record confirmed models in `artifacts/00-pipeline-log.md`.
+Wait for the user's reply. Then **immediately write `artifacts/00-pipeline-log.md`** (do NOT leave it as a bare header — a stale/empty log is what makes the writing-critic and visual-enhancer pick the wrong standard and emit English labels on a Chinese report). Record at minimum:
+
+```
+artifact-language: <zh | en | ...>   # from input.md's language preference
+article-type: <technical | general>  # inferred from the topic; refine at Step 4.5
+model-<agent>: <confirmed>            # one line per agent
+```
+
+Keep this file updated at every step (see Pipeline log section). `artifact-language` and `article-type` MUST be present before any downstream agent (devil's-advocate, writer, writing-critic, visual-enhancer) runs.
 
 ---
 
@@ -233,9 +241,9 @@ If the user opts in, run **Step 5** below before the final done. If not, the rep
 ### Step 5 — Visual Enhancement (OPTIONAL — only if the user opted in)
 
 Agent: `visual-enhancer`, model: sonnet.
-Input: `artifacts/03-report.md`. Output: `artifacts/03-report-illustrated.md` + images saved to `images/`.
+Input: `artifacts/03-report.md` **and `artifacts/03-article.md` if Step 4b produced one**. Output: `artifacts/03-report-illustrated.md` (+ `artifacts/03-article-illustrated.md` if an article exists) + images saved to `images/`.
 
-The agent reads `agents/visual-enhancer/CLAUDE.md` for its full instructions. It scans the report, identifies 5-8 image slots, searches for real images (Wikipedia, official sites, authoritative blogs, Wikimedia Commons — never random social media), and generates concept diagrams only when no real photo exists. All images are saved to `images/` and embedded into the illustrated report.
+The agent reads `agents/visual-enhancer/CLAUDE.md` for its full instructions. For **each** deliverable it: (1) generates a **mandatory cover** right after the title — for a **technical** topic the cover AND every diagram follow the `docs/image-style.md` "技术蓝墨" spec (flat, white, restrained palette — never a glossy/3D/dark poster); (2) identifies 5-8 content slots, preferring **real** images (paper diagrams, official-blog figures, Wikipedia/Wikimedia — ~70%) and AI-generating concept diagrams only when no real figure exists (~30%); (3) embeds everything with centered `<div align="center"><img width="XX%">` (never raw Markdown). Ensure `artifact-language` and `article-type` are in the pipeline log before launching, so the agent doesn't fall back to English labels or the wrong cover style.
 
 **→ DONE**: Tell the user:
 - "Knowledge report ready: `artifacts/03-report.md`"
@@ -256,7 +264,10 @@ Convert `03-report.md` → HTML → PDF via headless Chromium. **Do NOT use weas
    - CJK: `'Source Han Serif SC', 'Source Han Serif SC VF', 'PingFang SC', 'Noto Sans CJK SC', serif`
    - Latin: `'Source Serif 4', Georgia, serif`
    - **Image caption / figure typography (MUST)**: image captions must render lighter, italic, and slightly smaller than body text; figure/section titles stay bold. Add this CSS: `figure figcaption, .fig-caption, p > em:only-child { font-weight: 300; font-style: italic; font-size: 0.85em; color: #555; }` and `h1,h2,h3,h4 { font-weight: 700; }`. Latin (Source Serif 4) ships real Light + Italic font files (installed system-wide); CJK (思源宋体 VF) supplies the light weight via its variable weight axis but has no true italic, so Chromium synthesizes an oblique slant — acceptable for captions.
-3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted): follow `docs/STORYTELLING-REFERENCE.md`. The style guide and article corpus are bundled in `docs/boss_dai/` — read them directly, do NOT ask the user where to get reference articles. Read the guide, then 5 topic-matched articles, draft style-application notes, then write the narrative sections. Keep all facts and numbers exact.
+3. Storytelling tone (ONLY if a narrative / 有故事性 report is wanted) — **story-line selection is a GATE; do NOT jump straight into rewriting the prose**:
+   a. **Derive 3-4 candidate story-lines** from `03-report.md`. Each candidate = a one-line hook (钩子) + the through-question (贯穿设问) it drives + which report sections feed it. Every story-line MUST reduce to material already in the report — do not invent facts to make a better story.
+   b. **STOP and show the candidates to the user.** Ask them to pick one primary spine (optionally braid a second) or supplement their own angle. Wait for their choice before writing any narrative prose.
+   c. Only after the user confirms, follow `docs/STORYTELLING-REFERENCE.md`. The style guide and article corpus are bundled in `docs/boss_dai/` — read them directly, do NOT ask the user where to get reference articles. Read the guide, then 5 topic-matched articles, draft style-application notes, then write the narrative sections around the confirmed story-line. Keep all facts and numbers exact.
 4. **MUST** include rights footer on every page: render `docs/rights.template.md` as a fixed running footer, replacing the `<#...>` placeholder with the model names actually used this run (from the agent→model rows in `artifacts/00-pipeline-log.md`, e.g. `Claude Opus 4.8, Claude Sonnet 4.6`). **This step is mandatory — do NOT skip.**
 5. Render: `npx playwright pdf artifacts/05-report.html artifacts/05-report.pdf` (or headless Chromium `--print-to-pdf`).
 6. **MUST** verify ALL of: (a) no tofu □ boxes, (b) table borders intact, (c) **rights footer visible on every page** (re-run step 4 if missing).
