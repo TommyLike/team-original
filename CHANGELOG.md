@@ -41,6 +41,23 @@ and the focused article never got a cover unless the user asked.
   English labels + wrong cover style). Step 5 now names the article as a second
   illustrated deliverable.
 
+### Changed (`templates/explore/reference/technology-outline.md`)
+
+- Added **取材方法** section: for open-source projects with public source repos,
+  the pipeline MUST `git clone --depth 1` to `reference/src/`, read key design
+  docs (README/CHANGELOG/SECURITY/ARCHITECTURE), run one dependency audit
+  (`npm audit` / `cargo audit` / `trivy`), count code (`cloc` or `tokei`), and
+  inventory test infrastructure. This lifts ② 原理 and ③ 质量 from web-only
+  inference to repo-grounded evidence.
+
+### Changed (`templates/explore/CLAUDE.md`)
+
+- Added **Step 0.5 — Source Material Gathering** (Claude Code directly,
+  MANDATORY for open-source projects with repos): executes the outline's 取材
+  mandate after Step 0 STOP and before launching Step 1 researchers. Produces
+  `reference/source-material.md`, which becomes mandatory input for all four
+  researchers.
+
 ---
 
 ## [2026-07-05] — 病药效托 Skeleton, 技术蓝墨 Palette, Writing-Critic DA, Ray v3
